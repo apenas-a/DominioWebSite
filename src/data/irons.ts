@@ -1,9 +1,22 @@
 import { Shield, Zap, Wrench, Flame, Activity, Settings, Layers, Cpu } from "lucide-react";
 import type { SteelAlloy } from "@/components/sections/SteelFamilySection";
 
-import nodularImg from "@/assets/microstructure-nodular.jpg";
-import vermicularImg from "@/assets/microstructure-vermicular.jpg";
-import cinzentoImg from "@/assets/microstructure-cinzento.jpg";
+// Microstructure Images for Nodular Irons (GGG)
+import ggg40Img from "@/assets/microstructure-iron-ggg40.jpg";
+import ggg50Img from "@/assets/microstructure-iron-ggg50.jpg";
+import ggg60Img from "@/assets/microstructure-iron-ggg60.jpg";
+import ggg70Img from "@/assets/microstructure-iron-ggg70.jpg";
+
+// Microstructure Images for Gray Irons (GG)
+import gg15Img from "@/assets/microstructure-iron-gg15.jpg";
+import gg20Img from "@/assets/microstructure-iron-gg20.jpg";
+import gg25Img from "@/assets/microstructure-iron-gg25.jpg";
+import gg30Img from "@/assets/microstructure-iron-gg30.jpg";
+
+// Microstructure Images for Vermicular Irons (GGV)
+import ggv30Img from "@/assets/microstructure-iron-ggv30.jpg";
+import ggv40Img from "@/assets/microstructure-iron-ggv40.jpg";
+import ggv50Img from "@/assets/microstructure-iron-ggv50.jpg";
 
 export const nodularIrons: SteelAlloy[] = [
   {
@@ -22,7 +35,7 @@ export const nodularIrons: SteelAlloy[] = [
     ],
     applications: ["Buchas de suspensão", "Corpos de válvulas", "Conexões hidráulicas", "Suportes automotivos"],
     icon: Shield,
-    image: nodularImg,
+    image: ggg40Img,
     standardPrefix: "DIN 1693 / EN-GJS-400-15",
   },
   {
@@ -41,7 +54,7 @@ export const nodularIrons: SteelAlloy[] = [
     ],
     applications: ["Engrenagens", "Caixas de direção", "Pintassangues", "Polias e eixos"],
     icon: Zap,
-    image: nodularImg,
+    image: ggg50Img,
     standardPrefix: "DIN 1693 / EN-GJS-500-7",
   },
   {
@@ -60,7 +73,7 @@ export const nodularIrons: SteelAlloy[] = [
     ],
     applications: ["Virabrequins", "Camisas de cilindro", "Rodas dentadas", "Eixos de comando"],
     icon: Wrench,
-    image: nodularImg,
+    image: ggg60Img,
     standardPrefix: "DIN 1693 / EN-GJS-600-3",
   },
   {
@@ -79,7 +92,7 @@ export const nodularIrons: SteelAlloy[] = [
     ],
     applications: ["Engrenagens pesadas", "Matrizes de conformação", "Pistões de alta pressão", "Rodotes industriais"],
     icon: Flame,
-    image: nodularImg,
+    image: ggg70Img,
     standardPrefix: "DIN 1693 / EN-GJS-700-2",
   },
 ];
@@ -101,7 +114,7 @@ export const cinzentoIrons: SteelAlloy[] = [
     ],
     applications: ["Bases de máquinas", "Contrapesos", "Tampas de proteção", "Carcaças de reduzida solicitação"],
     icon: Layers,
-    image: cinzentoImg,
+    image: gg15Img,
     standardPrefix: "DIN 1691 / EN-GJL-150",
   },
   {
@@ -120,7 +133,7 @@ export const cinzentoIrons: SteelAlloy[] = [
     ],
     applications: ["Tambores de freio", "Volantes de motor", "Carcaças de bombas", "Polias simples"],
     icon: Settings,
-    image: cinzentoImg,
+    image: gg20Img,
     standardPrefix: "DIN 1691 / EN-GJL-200",
   },
   {
@@ -139,7 +152,7 @@ export const cinzentoIrons: SteelAlloy[] = [
     ],
     applications: ["Discos de freio", "Blocos de motores leves", "Platôs de embreagem", "Carcaças de compressores"],
     icon: Activity,
-    image: cinzentoImg,
+    image: gg25Img,
     standardPrefix: "DIN 1691 / EN-GJL-250",
   },
   {
@@ -158,7 +171,7 @@ export const cinzentoIrons: SteelAlloy[] = [
     ],
     applications: ["Blocos de motor heavy-duty", "Cabeçotes de cilindro", "Válvulas de alta pressão", "Guias de barramento"],
     icon: Cpu,
-    image: cinzentoImg,
+    image: gg30Img,
     standardPrefix: "DIN 1691 / EN-GJL-300",
   },
 ];
@@ -180,7 +193,7 @@ export const vermicularIrons: SteelAlloy[] = [
     ],
     applications: ["Colectores de escape", "Discos de freio de alta solicitação", "Moldes de vidro", "Peças sujeitas a choques térmicos"],
     icon: Flame,
-    image: vermicularImg,
+    image: ggv30Img,
     standardPrefix: "ISO 16112 / CGI 300",
   },
   {
@@ -199,7 +212,7 @@ export const vermicularIrons: SteelAlloy[] = [
     ],
     applications: ["Blocos de motores diesel de alta performance", "Cabeçotes industriais", "Tampas de caixas de transmissão"],
     icon: Activity,
-    image: vermicularImg,
+    image: ggv40Img,
     standardPrefix: "ISO 16112 / CGI 400",
   },
   {
@@ -218,7 +231,7 @@ export const vermicularIrons: SteelAlloy[] = [
     ],
     applications: ["Motores de alta densidade de potência", "Carcaças de turbocompressores", "Peças ferroviárias"],
     icon: Shield,
-    image: vermicularImg,
+    image: ggv50Img,
     standardPrefix: "ISO 16112 / CGI 500",
   },
 ];
