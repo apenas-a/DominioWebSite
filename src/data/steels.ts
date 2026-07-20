@@ -1,0 +1,238 @@
+import { Shield, Zap, Wrench, Settings, Diamond, Anchor, Flame, ShieldAlert, ThermometerSun } from "lucide-react";
+import type { SteelAlloy } from "@/components/sections/SteelFamilySection";
+
+import steel1020Img from "@/assets/microstructure-steel-1020.jpg";
+import steel1030Img from "@/assets/microstructure-steel-1030.jpg";
+import steel1045Img from "@/assets/microstructure-steel-1045.jpg";
+import steel1080Img from "@/assets/microstructure-steel-1080.jpg";
+import steel4140Img from "@/assets/microstructure-steel-4140.jpg";
+import steelH13Img from "@/assets/microstructure-steel-h13.jpg";
+import steel304Img from "@/assets/microstructure-steel-304.jpg";
+import steel410Img from "@/assets/microstructure-steel-410.jpg";
+
+export const carbonSteels: SteelAlloy[] = [
+  // Baixo Carbono
+  {
+    name: "Aço 1020",
+    mainStatLabel: "Teor de Carbono",
+    mainStatValue: "0,18 - 0,23% C",
+    mainStatPct: 22,
+    tagline: "Alta soldabilidade e tenacidade",
+    shape: "Ferrita + Perlita",
+    description: "Excelente conformabilidade e usinagem. Ideal para peças estruturais que exigem tenacidade e boa resposta à cementação.",
+    properties: [{ label: "Resistência", value: 55 }, { label: "Ductilidade", value: 90 }, { label: "Soldabilidade", value: 95 }, { label: "Usinabilidade", value: 75 }],
+    applications: ["Eixos", "Buchas", "Suportes estruturais", "Peças cementadas"],
+    icon: Shield,
+    image: steel1020Img,
+  },
+  // Médio Carbono
+  {
+    name: "Aço 1030",
+    mainStatLabel: "Teor de Carbono",
+    mainStatValue: "0,28 - 0,34% C",
+    mainStatPct: 32,
+    tagline: "Médio carbono, equilíbrio mecânico",
+    shape: "Perlita + Ferrita",
+    description: "Ótima combinação entre resistência e tenacidade. Responde bem a tratamentos térmicos para aplicações de médio esforço.",
+    properties: [{ label: "Resistência", value: 72 }, { label: "Ductilidade", value: 70 }, { label: "Soldabilidade", value: 75 }, { label: "Usinabilidade", value: 80 }],
+    applications: ["Engrenagens", "Forjados", "Virabrequins leves", "Bases estruturais"],
+    icon: Zap,
+    image: steel1030Img,
+  },
+  {
+    name: "Aço 1045",
+    mainStatLabel: "Teor de Carbono",
+    mainStatValue: "0,43 - 0,50% C",
+    mainStatPct: 47,
+    tagline: "Alta resistência mecânica",
+    shape: "Perlita Densa",
+    description: "Excelente resposta a tratamentos térmicos, entregando alta dureza e resistência mecânica. Solução robusta.",
+    properties: [{ label: "Resistência", value: 92 }, { label: "Ductilidade", value: 55 }, { label: "Soldabilidade", value: 55 }, { label: "Usinabilidade", value: 85 }],
+    applications: ["Eixos de alta carga", "Pinhões", "Componentes temperados", "Peças pesadas"],
+    icon: Wrench,
+    image: steel1045Img,
+  },
+  // Alto Carbono
+  {
+    name: "Aço 1070",
+    mainStatLabel: "Teor de Carbono",
+    mainStatValue: "0,65 - 0,75% C",
+    mainStatPct: 70,
+    tagline: "Alto carbono, alta dureza",
+    shape: "100% Perlita",
+    description: "Alta resistência ao desgaste e dureza. Difícil de soldar, mas excelente para componentes submetidos a abrasão.",
+    properties: [{ label: "Resistência", value: 95 }, { label: "Ductilidade", value: 40 }, { label: "Soldabilidade", value: 30 }, { label: "Usinabilidade", value: 55 }],
+    applications: ["Molas", "Lâminas", "Ferramentas manuais", "Peças agrícolas"],
+    icon: Diamond,
+    image: steel1080Img,
+  },
+  {
+    name: "Aço 1080",
+    mainStatLabel: "Teor de Carbono",
+    mainStatValue: "0,75 - 0,88% C",
+    mainStatPct: 80,
+    tagline: "Perlítico, máxima dureza",
+    shape: "Perlita Fina",
+    description: "Estrutura perlítica fina conferindo propriedades excepcionais de dureza e resistência à fadiga.",
+    properties: [{ label: "Resistência", value: 98 }, { label: "Ductilidade", value: 35 }, { label: "Soldabilidade", value: 25 }, { label: "Usinabilidade", value: 50 }],
+    applications: ["Molas de alta tensão", "Discos de arado", "Cabos de aço", "Serras"],
+    icon: Diamond,
+    image: steel1080Img,
+  },
+  {
+    name: "Aço 1095",
+    mainStatLabel: "Teor de Carbono",
+    mainStatValue: "0,90 - 1,03% C",
+    mainStatPct: 95,
+    tagline: "Extremo carbono para corte",
+    shape: "Perlita + Cementita",
+    description: "Altíssima dureza e retenção de fio. Muito utilizado em cutelaria e ferramentas que necessitam de corte afiado.",
+    properties: [{ label: "Resistência", value: 100 }, { label: "Ductilidade", value: 25 }, { label: "Soldabilidade", value: 20 }, { label: "Usinabilidade", value: 40 }],
+    applications: ["Cutelaria", "Facas industriais", "Molas planas", "Ferramentas de precisão"],
+    icon: Flame,
+    image: steel1080Img,
+  }
+];
+
+export const lowAlloySteels: SteelAlloy[] = [
+  {
+    name: "Aço 4140",
+    mainStatLabel: "Liga Principal (Cr-Mo)",
+    mainStatValue: "0,8 - 1,1% Cr / 0,15 - 0,25% Mo",
+    mainStatPct: 85,
+    tagline: "Cromo-Molibdênio, alta temperabilidade",
+    shape: "Martensita Revenida",
+    description: "Aço de baixa liga incrivelmente versátil. Oferece alta resistência à fadiga, torção e excelente temperabilidade.",
+    properties: [{ label: "Resistência", value: 95 }, { label: "Tenacidade", value: 85 }, { label: "Temperabilidade", value: 90 }, { label: "Usinabilidade", value: 75 }],
+    applications: ["Bielas", "Engrenagens pesadas", "Eixos de transmissão", "Peças forjadas"],
+    icon: Anchor,
+    image: steel4140Img,
+  },
+  {
+    name: "Aço 4340",
+    mainStatLabel: "Liga Principal (Ni-Cr-Mo)",
+    mainStatValue: "1,65 - 2,0% Ni / 0,7 - 0,9% Cr",
+    mainStatPct: 95,
+    tagline: "Máxima tenacidade e resistência",
+    shape: "Martensita Revenida / Bainita",
+    description: "O padrão da indústria para aplicações de altíssima tensão. O Níquel aumenta severamente a tenacidade e resistência a choques.",
+    properties: [{ label: "Resistência", value: 100 }, { label: "Tenacidade", value: 95 }, { label: "Temperabilidade", value: 95 }, { label: "Usinabilidade", value: 65 }],
+    applications: ["Trens de pouso", "Eixos propulsores", "Componentes aeronáuticos", "Matrizes"],
+    icon: ShieldAlert,
+    image: steel4140Img,
+  },
+  {
+    name: "Aço 8620",
+    mainStatLabel: "Liga Principal (Ni-Cr-Mo)",
+    mainStatValue: "Baixo Carbono (0,20% C)",
+    mainStatPct: 75,
+    tagline: "Rei da Cementação",
+    shape: "Núcleo Tenaz + Capa Dura",
+    description: "Excelente para cementação. O núcleo permanece tenaz enquanto a superfície atinge durezas altíssimas contra desgaste.",
+    properties: [{ label: "Resistência Núcleo", value: 75 }, { label: "Dureza Superficial", value: 98 }, { label: "Resist. Fadiga", value: 90 }, { label: "Usinabilidade", value: 80 }],
+    applications: ["Engrenagens de caixa", "Pinhões cementados", "Coroas", "Rolamentos"],
+    icon: Settings,
+    image: steel4140Img,
+  }
+];
+
+export const highAlloySteels: SteelAlloy[] = [
+  {
+    name: "Aço H13",
+    mainStatLabel: "Cromo / Molibdênio",
+    mainStatValue: "5,0% Cr / 1,5% Mo / 1,0% V",
+    mainStatPct: 90,
+    tagline: "Trabalho a quente, alta dureza",
+    shape: "Matriz Martensítica + Carbonetos",
+    description: "Resistente a choque térmico e craqueamento. Essencial para matrizes de forjamento e fundição sob pressão.",
+    properties: [{ label: "Dureza a Quente", value: 95 }, { label: "Tenacidade", value: 85 }, { label: "Resist. Desgaste", value: 80 }, { label: "Usinabilidade", value: 60 }],
+    applications: ["Matrizes de forja", "Moldes de injeção", "Extrusão de alumínio", "Estampos"],
+    icon: ThermometerSun,
+    image: steelH13Img,
+  },
+  {
+    name: "Aço D2",
+    mainStatLabel: "Alto Cromo / Alto Carbono",
+    mainStatValue: "1,5% C / 12,0% Cr",
+    mainStatPct: 98,
+    tagline: "Trabalho a frio, extremo desgaste",
+    shape: "Grandes Carbonetos de Cromo",
+    description: "Semi-inoxidável devido ao alto cromo. Apresenta excepcional resistência ao desgaste abrasivo em operações a frio.",
+    properties: [{ label: "Resist. Desgaste", value: 100 }, { label: "Tenacidade", value: 40 }, { label: "Temperabilidade", value: 95 }, { label: "Usinabilidade", value: 45 }],
+    applications: ["Facas de guilhotina", "Matrizes de estamparia", "Rolos de conformação", "Punções"],
+    icon: Diamond,
+    image: steelH13Img,
+  },
+  {
+    name: "Aço M2",
+    mainStatLabel: "Tungstênio / Molibdênio",
+    mainStatValue: "6,0% W / 5,0% Mo / 2,0% V",
+    mainStatPct: 100,
+    tagline: "Aço Rápido (High Speed Steel)",
+    shape: "Matriz complexa multicomponentes",
+    description: "Mantém o fio de corte e a dureza em temperaturas extremamente altas, ideal para ferramentas de usinagem.",
+    properties: [{ label: "Dureza a Quente", value: 100 }, { label: "Retenção de Fio", value: 100 }, { label: "Tenacidade", value: 50 }, { label: "Usinabilidade", value: 40 }],
+    applications: ["Brocas", "Fresas", "Machos", "Brochas"],
+    icon: Zap,
+    image: steelH13Img,
+  }
+];
+
+export const stainlessSteels: SteelAlloy[] = [
+  {
+    name: "Aço 304",
+    standardPrefix: "AISI",
+    mainStatLabel: "Resistência à Corrosão",
+    mainStatValue: "18% Cr / 8% Ni",
+    mainStatPct: 90,
+    tagline: "Inox Austenítico Universal",
+    shape: "Grãos Austeníticos + Maclas",
+    description: "O inoxidável mais versátil. Excelente resistência à corrosão, soldabilidade e conformabilidade. Não magnético.",
+    properties: [{ label: "Resist. Corrosão", value: 90 }, { label: "Soldabilidade", value: 95 }, { label: "Resistência Mecânica", value: 65 }, { label: "Usinabilidade", value: 60 }],
+    applications: ["Indústria alimentícia", "Tubulações", "Tanques químicos", "Arquitetura"],
+    icon: Shield,
+    image: steel304Img,
+  },
+  {
+    name: "Aço 316",
+    standardPrefix: "AISI",
+    mainStatLabel: "Resistência à Corrosão",
+    mainStatValue: "16% Cr / 10% Ni / 2% Mo",
+    mainStatPct: 98,
+    tagline: "Inox Naval / Químico",
+    shape: "Grãos Austeníticos",
+    description: "A adição de Molibdênio aumenta incrivelmente a resistência à corrosão por pites em ambientes clorados (marítimos).",
+    properties: [{ label: "Resist. Corrosão", value: 100 }, { label: "Soldabilidade", value: 95 }, { label: "Resistência Mecânica", value: 65 }, { label: "Usinabilidade", value: 55 }],
+    applications: ["Equipamentos navais", "Indústria farmacêutica", "Implantes", "Plantas químicas"],
+    icon: Anchor,
+    image: steel304Img,
+  },
+  {
+    name: "Aço 410",
+    standardPrefix: "AISI",
+    mainStatLabel: "Resistência à Corrosão",
+    mainStatValue: "11,5 - 13,5% Cr",
+    mainStatPct: 60,
+    tagline: "Inox Martensítico Básico",
+    shape: "Martensita em Lâminas",
+    description: "Combina resistência à corrosão moderada com alta resistência mecânica e dureza. É magnético e pode ser temperado.",
+    properties: [{ label: "Resist. Corrosão", value: 60 }, { label: "Dureza", value: 85 }, { label: "Resistência Mecânica", value: 85 }, { label: "Usinabilidade", value: 75 }],
+    applications: ["Válvulas", "Eixos de bombas", "Fixadores", "Peças sujeitas a atrito"],
+    icon: Settings,
+    image: steel410Img,
+  },
+  {
+    name: "Aço 420",
+    standardPrefix: "AISI",
+    mainStatLabel: "Resistência à Corrosão",
+    mainStatValue: "12 - 14% Cr / 0,15% min C",
+    mainStatPct: 65,
+    tagline: "Inox de Alta Dureza (Cutelaria)",
+    shape: "Martensita Cúbica",
+    description: "Mais carbono que o 410, garantindo altíssima dureza após o tratamento térmico. Excelente para instrumentos de corte.",
+    properties: [{ label: "Resist. Corrosão", value: 65 }, { label: "Dureza", value: 98 }, { label: "Retenção de Fio", value: 95 }, { label: "Usinabilidade", value: 65 }],
+    applications: ["Instrumentos cirúrgicos", "Facas profissionais", "Engrenagens de precisão", "Moldes plásticos"],
+    icon: Wrench,
+    image: steel410Img,
+  }
+];
