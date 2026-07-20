@@ -1,5 +1,6 @@
 import Layout from "@/components/layout/Layout";
 import SteelFamilySection from "@/components/sections/SteelFamilySection";
+import SteelComparison from "@/components/sections/SteelComparison";
 import { carbonSteels, lowAlloySteels, highAlloySteels, stainlessSteels } from "@/data/steels";
 
 const Aco = () => (
@@ -33,6 +34,7 @@ const Aco = () => (
       description="Ligas de alta resistência à corrosão e oxidação, ideais para ambientes agressivos, indústria alimentícia, naval e médica."
       alloys={stainlessSteels}
     />
+    <SteelComparison />
   </Layout>
 );
 
