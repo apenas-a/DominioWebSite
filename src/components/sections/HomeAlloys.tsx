@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Sparkles, Shield } from "lucide-react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
@@ -66,8 +67,9 @@ interface AlloySectionProps {
   linkLabel: string;
 }
 
-const AlloyGrid = ({ title, subtitle, badge, badgeIcon, alloys, linkTo, linkLabel }: AlloySectionProps) => {
+const AlloyAccordionGrid = ({ title, subtitle, badge, badgeIcon, alloys, linkTo, linkLabel }: AlloySectionProps) => {
   const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
+  const [activeIndex, setActiveIndex] = useState<number>(0);
 
   return (
     <div className="section-container relative z-10" ref={ref}>
@@ -97,74 +99,110 @@ const AlloyGrid = ({ title, subtitle, badge, badgeIcon, alloys, linkTo, linkLabe
         </Link>
       </div>
 
-      {/* SVG Gooey Filter */}
-      <svg className="hidden">
-        <defs>
-          <filter id="gooey">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
-            <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="gooey" />
-            <feBlend in="SourceGraphic" in2="gooey" />
-          </filter>
-        </defs>
-      </svg>
+      {/* Accordion Container */}
+      <div className="flex flex-col md:flex-row gap-3 sm:gap-4 h-[560px] sm:h-[480px] md:h-[420px] w-full">
+        {alloys.map((alloy, index) => {
+          const isActive = activeIndex === index;
 
-      <div className="grid grid-cols-3 gap-2 sm:gap-4 md:gap-6 lg:gap-8">
-        {alloys.map((alloy, index) => (
-          <div
-            key={alloy.name}
-            className={`group relative rounded-2xl overflow-hidden aspect-[9/16] bg-card border border-border/50 hover:border-accent/50 transition-all duration-700 ${
-              isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-20"
-            }`}
-            style={{ transitionDelay: `${index * 150}ms` }}
-          >
-            <img
-              src={alloy.image}
-              alt={alloy.name}
-              className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 opacity-70 group-hover:opacity-100"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
-
-            {/* Gooey melt on hover */}
+          return (
             <div
-              className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"
-              style={{ filter: "url(#gooey)" }}
+              key={alloy.name}
+              onMouseEnter={() => setActiveIndex(index)}
+              onClick={() => setActiveIndex(index)}
+              className={`group relative rounded-xl overflow-hidden cursor-pointer bg-card border transition-all duration-500 ease-in-out flex flex-col p-5 sm:p-6 select-none ${
+                isActive
+                  ? "flex-[3.5] border-accent shadow-[0_0_25px_rgba(255,90,45,0.25)]"
+                  : "flex-1 border-border/60 hover:border-accent/40"
+              } ${
+                isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-20"
+              }`}
+              style={{ transitionDelay: `${index * 100}ms` }}
             >
-              <div className="absolute -bottom-10 left-1/4 w-20 h-20 bg-accent/40 rounded-full animate-bounce-slow" style={{ animationDelay: "0s" }} />
-              <div className="absolute -bottom-12 left-1/2 w-16 h-16 bg-molten/40 rounded-full animate-bounce-slow" style={{ animationDelay: "0.2s" }} />
-              <div className="absolute -bottom-8 right-1/4 w-24 h-24 bg-accent/30 rounded-full animate-bounce-slow" style={{ animationDelay: "0.4s" }} />
-            </div>
-
-            <div className="absolute bottom-0 left-0 w-full p-3 sm:p-6 lg:p-8">
-              <div
-                className={`w-8 sm:w-12 h-1 bg-gradient-to-r ${alloy.color} mb-2 sm:mb-4 transform origin-left transition-transform duration-300 group-hover:scale-x-150`}
+              {/* Background Image & Gradient */}
+              <img
+                src={alloy.image}
+                alt={alloy.name}
+                className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 ${
+                  isActive ? "scale-105 opacity-85" : "scale-100 opacity-40 group-hover:opacity-60"
+                }`}
               />
-              <h3 className="font-heading text-sm sm:text-xl lg:text-2xl font-bold uppercase text-foreground mb-1 sm:mb-2 truncate">
-                {alloy.name}
-              </h3>
-              <p className="text-foreground/80 text-[10px] sm:text-sm lg:text-base mb-2 sm:mb-4 transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 line-clamp-2">
-                {alloy.desc}
-              </p>
-              <Link
-                to={alloy.to}
-                className="inline-flex items-center gap-1 sm:gap-2 text-accent text-[10px] sm:text-sm font-semibold uppercase tracking-wider transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 delay-100"
+              <div
+                className={`absolute inset-0 transition-opacity duration-500 bg-gradient-to-t ${
+                  isActive
+                    ? "from-background/95 via-background/60 to-background/20"
+                    : "from-background/90 via-background/70 to-background/50"
+                }`}
+              />
+
+              {/* Accent Strip */}
+              <div
+                className={`absolute top-0 left-0 w-full md:w-1.5 h-1.5 md:h-full bg-gradient-to-r md:bg-gradient-to-b ${alloy.color} transition-all duration-500 ${
+                  isActive ? "opacity-100" : "opacity-40"
+                }`}
+              />
+
+              {/* Card Inner Content */}
+              <div
+                className={`relative z-10 flex flex-col h-full w-full transition-all duration-500 ${
+                  isActive
+                    ? "justify-end items-start"
+                    : "justify-center items-center md:items-center"
+                }`}
               >
-                <span className="hidden sm:inline">Descobrir mais</span>
-                <span className="sm:hidden">Ver</span>
-                <ArrowRight size={14} className="sm:w-4 sm:h-4" />
-              </Link>
+                {/* Title */}
+                <div
+                  className={`transition-all duration-500 flex items-center justify-center ${
+                    isActive
+                      ? "rotate-0 translate-y-0 mb-3"
+                      : "md:-rotate-90 md:whitespace-nowrap"
+                  }`}
+                >
+                  <h3
+                    className={`font-heading font-bold uppercase tracking-wider transition-all duration-500 ${
+                      isActive
+                        ? "text-xl sm:text-2xl lg:text-3xl text-foreground"
+                        : "text-base sm:text-lg lg:text-xl text-accent"
+                    }`}
+                  >
+                    {alloy.name}
+                  </h3>
+                </div>
+
+                {/* Description & Action Button (Visible when active) */}
+                <div
+                  className={`transition-all duration-500 overflow-hidden w-full ${
+                    isActive
+                      ? "opacity-100 translate-y-0 max-h-48"
+                      : "opacity-0 translate-y-4 max-h-0 pointer-events-none"
+                  }`}
+                >
+                  <p className="text-foreground/90 text-xs sm:text-sm lg:text-base mb-4 leading-relaxed line-clamp-3 max-w-lg">
+                    {alloy.desc}
+                  </p>
+
+                  <Link
+                    to={alloy.to}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-accent text-accent-foreground font-semibold text-xs sm:text-sm uppercase tracking-wider hover:bg-accent/90 transition-colors shadow-md group/btn"
+                  >
+                    <span>Descobrir mais</span>
+                    <ArrowRight size={16} className="group-hover/btn:translate-x-1 transition-transform" />
+                  </Link>
+                </div>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
 };
 
+
 const HomeAlloys = () => {
   return (
     <section className="py-16 sm:py-24 bg-background relative overflow-hidden">
       {/* Ferro Fundido */}
-      <AlloyGrid
+      <AlloyAccordionGrid
         badge="Nossas Especialidades"
         badgeIcon={<Sparkles size={14} />}
         title={<>Ferro <span className="text-gradient-molten">Fundido</span></>}
@@ -180,7 +218,7 @@ const HomeAlloys = () => {
       </div>
 
       {/* Aços Fundidos */}
-      <AlloyGrid
+      <AlloyAccordionGrid
         badge="Fundição de Aço"
         badgeIcon={<Shield size={14} />}
         title={<>Aços <span className="text-gradient-molten">Fundidos</span></>}
