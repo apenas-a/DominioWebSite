@@ -75,8 +75,8 @@ const SteelAlloyFlipCard = ({
       >
         {/* FRONT SIDE (Capa em Repouso) */}
         <div className="absolute inset-0 w-full h-full bg-[#151515] rounded-xl overflow-hidden [backface-visibility:hidden] -webkit-[backface-visibility:hidden] flex items-center justify-center shadow-2xl">
-          {/* Animated Gradient Rotating Border */}
-          <div className="absolute w-[180%] h-[180%] bg-[linear-gradient(90deg,transparent,#ff8844,#ff5500,#ffaa44,#ff5500,transparent)] animate-[rotation_481_5s_linear_infinite]" />
+          {/* Animated Ray of Light Beam Running Around Border */}
+          <div className="absolute w-[130px] sm:w-[160px] h-[170%] bg-[linear-gradient(90deg,transparent,#ff9966,#ff9966,#ff5500,#ff9966,transparent)] animate-border-rotate" />
 
           {/* Inner Front Content */}
           <div className="absolute inset-[2px] bg-[#141414] rounded-[10px] p-3 sm:p-5 flex flex-col justify-between items-center text-center z-10">
