@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { Shield } from "lucide-react";
 
@@ -25,6 +26,176 @@ export interface SteelFamilySectionProps {
   isFirst?: boolean;
 }
 
+const SteelAlloyFlipCard = ({
+  steel,
+  index,
+  gridVisible,
+}: {
+  steel: SteelAlloy;
+  index: number;
+  gridVisible: boolean;
+}) => {
+  const [isFlipped, setIsFlipped] = useState<boolean>(false);
+  const Icon = steel.icon;
+  const statLabel = steel.mainStatLabel || "Teor de Carbono";
+  const statValue = steel.mainStatValue || "";
+  const statPct = steel.mainStatPct || 0;
+  const prefix = steel.standardPrefix || "SAE / ABNT";
+
+  return (
+    <div
+      onClick={() => setIsFlipped((prev) => !prev)}
+      className={`group [perspective:1000px] h-[360px] sm:h-[440px] lg:h-[480px] w-full cursor-pointer select-none transition-all duration-700 ${
+        gridVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-16"
+      }`}
+      style={{ transitionDelay: `${index * 100}ms` }}
+    >
+      {/* Scoped CSS Animation & Hover Media Query Fix */}
+      <style>{`
+        @keyframes rotation_481 {
+          0% {
+            transform: rotateZ(0deg);
+          }
+          100% {
+            transform: rotateZ(360deg);
+          }
+        }
+        @media (hover: hover) {
+          .group:hover .flip-card-inner {
+            transform: rotateY(180deg);
+          }
+        }
+      `}</style>
+
+      {/* Flip Card Wrapper */}
+      <div
+        className={`flip-card-inner relative w-full h-full duration-700 ease-in-out transition-transform [transform-style:preserve-3d] ${
+          isFlipped ? "[transform:rotateY(180deg)]" : ""
+        }`}
+      >
+        {/* FRONT SIDE (Capa em Repouso) */}
+        <div className="absolute inset-0 w-full h-full bg-[#151515] rounded-xl overflow-hidden [backface-visibility:hidden] -webkit-[backface-visibility:hidden] flex items-center justify-center shadow-2xl">
+          {/* Animated Gradient Rotating Border */}
+          <div className="absolute w-[180%] h-[180%] bg-[linear-gradient(90deg,transparent,#ff8844,#ff5500,#ffaa44,#ff5500,transparent)] animate-[rotation_481_5s_linear_infinite]" />
+
+          {/* Inner Front Content */}
+          <div className="absolute inset-[2px] bg-[#141414] rounded-[10px] p-3 sm:p-5 flex flex-col justify-between items-center text-center z-10">
+            {/* Top Badges */}
+            <div className="w-full flex justify-between items-center gap-1">
+              <span className="text-[8px] sm:text-[10px] font-mono uppercase tracking-widest text-foreground/50 bg-white/5 px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded border border-white/10 truncate max-w-[48%]">
+                {prefix}
+              </span>
+              <span className="text-[8px] sm:text-[10px] font-mono uppercase tracking-widest text-accent bg-accent/10 px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded border border-accent/20 truncate max-w-[48%]">
+                {steel.shape}
+              </span>
+            </div>
+
+            {/* Central Microstructure Lens Image */}
+            <div className="my-auto flex flex-col items-center justify-center w-full">
+              <div className="w-24 h-24 sm:w-36 sm:h-36 lg:w-40 lg:h-40 rounded-full overflow-hidden border-3 sm:border-4 border-[#222] group-hover:border-accent shadow-[inset_0_0_20px_rgba(0,0,0,0.8),0_0_25px_rgba(255,90,45,0.25)] transition-colors duration-500 relative bg-black shrink-0">
+                <img
+                  src={steel.image}
+                  alt={`Microestrutura ${steel.name}`}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                />
+              </div>
+
+              {/* Alloy Name & Subtitle */}
+              <h3 className="font-heading text-sm sm:text-xl lg:text-2xl font-bold uppercase text-foreground mt-2 sm:mt-4 mb-0.5 sm:mb-1 leading-tight">
+                {steel.name}
+              </h3>
+              <p className="text-accent text-[9px] sm:text-xs font-semibold uppercase tracking-wider line-clamp-1 max-w-[95%]">
+                {steel.tagline}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* BACK SIDE (Informações Detalhadas) */}
+        <div className="absolute inset-0 w-full h-full bg-[#161616] rounded-xl overflow-hidden [backface-visibility:hidden] -webkit-[backface-visibility:hidden] [transform:rotateY(180deg)] p-3 sm:p-5 flex flex-col justify-between border border-accent/50 shadow-[0_0_30px_rgba(255,90,45,0.2)] z-20">
+          <div className="flex flex-col justify-between h-full overflow-y-auto no-scrollbar pr-0.5">
+            <div>
+              {/* Back Header */}
+              <div className="flex items-start justify-between border-b border-white/10 pb-1.5 sm:pb-3 mb-2 sm:mb-3">
+                <div className="pr-1">
+                  <span className="text-[8px] sm:text-[9px] uppercase tracking-widest text-accent font-semibold block">
+                    {steel.shape} &bull; {prefix}
+                  </span>
+                  <h4 className="font-heading text-xs sm:text-lg lg:text-xl font-bold uppercase text-foreground">
+                    {steel.name}
+                  </h4>
+                </div>
+                <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg gradient-molten flex items-center justify-center shrink-0">
+                  <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-accent-foreground" />
+                </div>
+              </div>
+
+              {/* Stat bar */}
+              {statValue && (
+                <div className="mb-2 sm:mb-3">
+                  <div className="flex justify-between text-[8px] sm:text-[10px] uppercase tracking-wider text-foreground/70 mb-0.5">
+                    <span>{statLabel}</span>
+                    <span className="text-accent font-semibold">{statValue}</span>
+                  </div>
+                  <div className="h-1 sm:h-1.5 bg-background/80 rounded-full overflow-hidden border border-border/40">
+                    <div
+                      className="h-full gradient-molten rounded-full transition-all duration-1000"
+                      style={{ width: gridVisible ? `${statPct}%` : "0%" }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Description */}
+              <p className="text-[9px] sm:text-xs text-foreground/85 leading-tight sm:leading-relaxed mb-2 sm:mb-3">
+                {steel.description}
+              </p>
+
+              {/* Properties Bars */}
+              <div className="space-y-1 sm:space-y-2 mb-2 sm:mb-3">
+                {steel.properties.map((p, i) => (
+                  <div key={p.label}>
+                    <div className="flex justify-between text-[8px] sm:text-[10px] text-foreground/75 mb-0.5">
+                      <span className="truncate mr-1">{p.label}</span>
+                      <span className="text-accent font-medium">{p.value}%</span>
+                    </div>
+                    <div className="h-0.5 sm:h-1 bg-background/80 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-accent to-molten rounded-full transition-all duration-700"
+                        style={{
+                          width: gridVisible ? `${p.value}%` : "0%",
+                          transitionDelay: `${index * 100 + i * 50}ms`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Applications */}
+            <div className="pt-1.5 sm:pt-2 border-t border-white/10 mt-auto shrink-0">
+              <p className="text-[8px] sm:text-[9px] uppercase tracking-widest text-foreground/50 mb-1 font-mono">
+                Aplicações
+              </p>
+              <div className="flex flex-wrap gap-1">
+                {steel.applications.map((app) => (
+                  <span
+                    key={app}
+                    className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-foreground/80 font-medium truncate max-w-full"
+                  >
+                    {app}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const SteelFamilySection = ({ id, badge, title, description, alloys, isFirst = false }: SteelFamilySectionProps) => {
   const { ref: titleRef, isVisible: titleVisible } = useScrollAnimation();
   const { ref: gridRef, isVisible: gridVisible } = useScrollAnimation({ threshold: 0.05 });
@@ -51,115 +222,16 @@ const SteelFamilySection = ({ id, badge, title, description, alloys, isFirst = f
           </p>
         </div>
 
+        {/* Mobile Grid: 2 columns per row */}
         <div ref={gridRef} className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 lg:gap-8">
-          {alloys.map((steel, index) => {
-            const Icon = steel.icon;
-            const statLabel = steel.mainStatLabel || "Teor de Carbono";
-            const statValue = steel.mainStatValue || "";
-            const statPct = steel.mainStatPct || 0;
-            const prefix = steel.standardPrefix || "SAE / ABNT";
-
-            return (
-              <div
-                key={steel.name}
-                className={`relative glass-dark edge-glow rounded-xl sm:rounded-2xl overflow-hidden flex flex-col group hover:-translate-y-2 transition-all duration-500 ${
-                  gridVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-16"
-                }`}
-                style={{ transitionDelay: `${index * 120}ms` }}
-              >
-                {/* Microscope lens image */}
-                <div className="relative aspect-square overflow-hidden flex-shrink-0 bg-black border-b border-white/10 flex items-center justify-center p-1.5 sm:p-3">
-                  <div className="w-[88%] h-[88%] rounded-full overflow-hidden border-2 sm:border-4 border-[#1a1a1a] shadow-[inset_0_0_20px_rgba(0,0,0,0.9),0_0_15px_rgba(255,120,30,0.1)] relative group-hover:border-accent/40 transition-colors duration-700">
-                    <img
-                      src={steel.image}
-                      alt={`Microestrutura ${steel.name}`}
-                      className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-125 saturate-50 group-hover:saturate-100 mix-blend-screen"
-                    />
-                    <div className="absolute inset-0 border border-white/10 rounded-full pointer-events-none" />
-                    <div className="absolute top-1/2 left-0 w-full h-[1px] bg-white/10 pointer-events-none" />
-                    <div className="absolute left-1/2 top-0 w-[1px] h-full bg-white/10 pointer-events-none" />
-                  </div>
-                  <div className="absolute top-2 right-2 sm:top-4 sm:right-4 px-1.5 py-0.5 sm:px-3 sm:py-1.5 rounded-full bg-gradient-to-r from-[#2a2a2a] to-[#1a1a1a] border border-white/10 text-accent font-mono text-[7px] sm:text-[10px] uppercase tracking-widest shadow-lg z-20 group-hover:text-molten transition-colors">
-                    {steel.shape}
-                  </div>
-                </div>
-
-                {/* Card content */}
-                <div className="p-3 sm:p-6 lg:p-7 flex flex-col flex-grow">
-                  {/* Icon + prefix — hidden on mobile for compactness */}
-                  <div className="hidden sm:flex items-start justify-between mb-5">
-                    <div className="w-12 h-12 rounded-xl gradient-molten flex items-center justify-center shadow-lg shadow-accent/20 group-hover:scale-105 transition-transform">
-                      <Icon className="w-6 h-6 text-accent-foreground" />
-                    </div>
-                    <span className="text-[10px] uppercase tracking-[0.2em] text-foreground/50 font-medium text-right max-w-[100px] leading-tight">
-                      {prefix}
-                    </span>
-                  </div>
-
-                  <h3 className="font-heading text-sm sm:text-2xl font-bold uppercase text-foreground mb-0.5 sm:mb-1">
-                    {steel.name}
-                  </h3>
-                  <p className="text-accent text-[9px] sm:text-xs uppercase tracking-wider mb-2 sm:mb-4 font-semibold line-clamp-1">
-                    {steel.tagline}
-                  </p>
-
-                  {/* Main Stat Bar — hidden on mobile */}
-                  <div className="hidden sm:block mb-5">
-                    <div className="flex justify-between text-[11px] uppercase tracking-wider text-foreground/60 mb-1.5">
-                      <span>{statLabel}</span>
-                      <span className="text-foreground/80 font-medium">{statValue}</span>
-                    </div>
-                    <div className="h-1.5 bg-background/60 rounded-full overflow-hidden border border-border/40">
-                      <div
-                        className="h-full gradient-molten rounded-full transition-all duration-1000"
-                        style={{ width: gridVisible ? `${statPct}%` : "0%" }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Description — hidden on mobile */}
-                  <p className="hidden sm:block text-sm text-foreground/75 leading-relaxed mb-5">{steel.description}</p>
-
-                  {/* Property bars */}
-                  <div className="space-y-1.5 sm:space-y-2.5 mb-3 sm:mb-5">
-                    {steel.properties.map((p, i) => (
-                      <div key={p.label}>
-                        <div className="flex justify-between text-[9px] sm:text-[11px] text-foreground/70 mb-0.5 sm:mb-1">
-                          <span className="truncate mr-1">{p.label}</span>
-                          <span className="text-foreground/50 shrink-0">{p.value}%</span>
-                        </div>
-                        <div className="h-0.5 sm:h-1 bg-background/60 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-gradient-to-r from-accent to-molten rounded-full transition-all duration-700"
-                            style={{
-                              width: gridVisible ? `${p.value}%` : "0%",
-                              transitionDelay: `${index * 120 + i * 80 + 200}ms`,
-                            }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-auto pt-2 sm:pt-4 border-t border-border/30">
-                    <p className="text-[8px] sm:text-[10px] uppercase tracking-[0.18em] text-foreground/50 mb-1 sm:mb-2">
-                      Aplicações
-                    </p>
-                    <div className="flex flex-wrap gap-1 sm:gap-1.5">
-                      {steel.applications.map((app) => (
-                        <span
-                          key={app}
-                          className="text-[8px] sm:text-[11px] px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-background/50 border border-border/40 text-foreground/75"
-                        >
-                          {app}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          {alloys.map((steel, index) => (
+            <SteelAlloyFlipCard
+              key={steel.name}
+              steel={steel}
+              index={index}
+              gridVisible={gridVisible}
+            />
+          ))}
         </div>
       </div>
     </section>
