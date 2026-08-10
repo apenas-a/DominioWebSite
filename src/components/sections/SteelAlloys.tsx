@@ -1,5 +1,9 @@
-import { useScrollAnimation } from "@/hooks/useScrollAnimation";
+import { useEffect, useRef } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Shield, Zap, Wrench } from "lucide-react";
+
+gsap.registerPlugin(ScrollTrigger);
 
 interface SteelAlloy {
   name: string;
@@ -64,18 +68,66 @@ const steels: SteelAlloy[] = [
 ];
 
 const SteelAlloys = () => {
-  const { ref: titleRef, isVisible: titleVisible } = useScrollAnimation();
-  const { ref: gridRef, isVisible: gridVisible } = useScrollAnimation({ threshold: 0.05 });
+  const containerRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const isReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    
+    if (isReducedMotion) {
+      gsap.set(".steel-alloy-header, .steel-alloy-card", { opacity: 1, y: 0 });
+      gsap.set(".steel-alloy-progress", { width: (i, el) => el.getAttribute("data-width") });
+      return;
+    }
+
+    const ctx = gsap.context(() => {
+      // Header Animation
+      gsap.from(".steel-alloy-header", {
+        y: 40,
+        opacity: 0,
+        duration: 0.8,
+        ease: "power3.out",
+        scrollTrigger: {
+          trigger: ".steel-alloy-header",
+          start: "top 85%",
+        }
+      });
+
+      // Cards Animation
+      gsap.from(".steel-alloy-card", {
+        y: 50,
+        opacity: 0,
+        duration: 0.8,
+        stagger: 0.15,
+        ease: "power3.out",
+        scrollTrigger: {
+          trigger: ".steel-alloy-grid",
+          start: "top 80%",
+        }
+      });
+
+      // Progress Bars Animation
+      ScrollTrigger.create({
+        trigger: ".steel-alloy-grid",
+        start: "top 75%",
+        onEnter: () => {
+          gsap.utils.toArray<HTMLElement>(".steel-alloy-progress").forEach(bar => {
+            gsap.to(bar, {
+              width: bar.getAttribute("data-width") || "0%",
+              duration: 1.2,
+              ease: "power3.out"
+            });
+          });
+        }
+      });
+    }, containerRef);
+
+    return () => ctx.revert();
+  }, []);
 
   return (
-    <section id="aco" className="py-16 sm:py-24 surface-forge relative overflow-hidden border-t border-border/40">
+    <section id="aco" ref={containerRef} className="py-16 sm:py-24 surface-forge relative overflow-hidden border-t border-border/40">
       <div className="section-container relative z-10">
-        <div
-          ref={titleRef}
-          className={`text-center mb-10 sm:mb-16 transition-all duration-700 ${
-            titleVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-          }`}
-        >
+        <div className="steel-alloy-header text-center mb-10 sm:mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-5 rounded-full border border-accent/30 bg-accent/5 text-xs uppercase tracking-[0.2em] text-accent">
             <Shield size={14} />
             Fundição de Aço
@@ -91,16 +143,13 @@ const SteelAlloys = () => {
           </p>
         </div>
 
-        <div ref={gridRef} className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-          {steels.map((steel, index) => {
+        <div className="steel-alloy-grid grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+          {steels.map((steel) => {
             const Icon = steel.icon;
             return (
               <div
                 key={steel.name}
-                className={`relative glass-dark edge-glow rounded-2xl p-6 sm:p-7 flex flex-col group hover:-translate-y-2 transition-all duration-500 ${
-                  gridVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-16"
-                }`}
-                style={{ transitionDelay: `${index * 120}ms` }}
+                className="steel-alloy-card relative glass-dark edge-glow rounded-2xl p-6 sm:p-7 flex flex-col group hover:-translate-y-2 transition-all duration-500"
               >
                 <div className="flex items-start justify-between mb-5">
                   <div className="w-12 h-12 rounded-xl gradient-molten flex items-center justify-center shadow-lg shadow-accent/20 group-hover:scale-105 transition-transform">
@@ -126,8 +175,9 @@ const SteelAlloys = () => {
                   </div>
                   <div className="h-1.5 bg-background/60 rounded-full overflow-hidden border border-border/40">
                     <div
-                      className="h-full gradient-molten rounded-full transition-all duration-1000"
-                      style={{ width: gridVisible ? `${steel.carbonPct * 2}%` : "0%" }}
+                      className="steel-alloy-progress h-full gradient-molten rounded-full"
+                      data-width={`${steel.carbonPct * 2}%`}
+                      style={{ width: "0%" }}
                     />
                   </div>
                 </div>
@@ -138,7 +188,7 @@ const SteelAlloys = () => {
 
                 {/* Propriedades */}
                 <div className="space-y-2.5 mb-5">
-                  {steel.properties.map((p, i) => (
+                  {steel.properties.map((p) => (
                     <div key={p.label}>
                       <div className="flex justify-between text-[11px] text-foreground/70 mb-1">
                         <span>{p.label}</span>
@@ -146,11 +196,9 @@ const SteelAlloys = () => {
                       </div>
                       <div className="h-1 bg-background/60 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-gradient-to-r from-accent to-molten rounded-full transition-all duration-700"
-                          style={{
-                            width: gridVisible ? `${p.value}%` : "0%",
-                            transitionDelay: `${index * 120 + i * 80 + 200}ms`,
-                          }}
+                          className="steel-alloy-progress h-full bg-gradient-to-r from-accent to-molten rounded-full"
+                          data-width={`${p.value}%`}
+                          style={{ width: "0%" }}
                         />
                       </div>
                     </div>

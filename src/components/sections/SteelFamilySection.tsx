@@ -1,6 +1,9 @@
-import { useState } from "react";
-import { useScrollAnimation } from "@/hooks/useScrollAnimation";
+import { useEffect, useRef, useState } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Shield } from "lucide-react";
+
+gsap.registerPlugin(ScrollTrigger);
 
 export interface SteelAlloy {
   name: string;
@@ -29,49 +32,57 @@ export interface SteelFamilySectionProps {
 const SteelAlloyFlipCard = ({
   steel,
   index,
-  gridVisible,
 }: {
   steel: SteelAlloy;
   index: number;
-  gridVisible: boolean;
 }) => {
   const [isFlipped, setIsFlipped] = useState<boolean>(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const frontBarsRef = useRef<HTMLDivElement>(null);
+  
   const Icon = steel.icon;
   const statLabel = steel.mainStatLabel || "Teor de Carbono";
   const statValue = steel.mainStatValue || "";
   const statPct = steel.mainStatPct || 0;
   const prefix = steel.standardPrefix || "SAE / ABNT";
 
+  const toggleFlip = () => {
+    const isReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const inner = cardRef.current?.querySelector(".flip-card-inner");
+    
+    setIsFlipped(!isFlipped);
+    
+    if (inner && !isReducedMotion) {
+      gsap.to(inner, {
+        rotateY: !isFlipped ? 180 : 0,
+        duration: 0.8,
+        ease: "power2.inOut"
+      });
+    } else if (inner) {
+      gsap.set(inner, { rotateY: !isFlipped ? 180 : 0 });
+    }
+  };
+
   return (
     <div
-      onClick={() => setIsFlipped((prev) => !prev)}
-      className={`group [perspective:1000px] h-[360px] sm:h-[440px] lg:h-[480px] w-full cursor-pointer select-none transition-all duration-700 ${
-        gridVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-16"
-      }`}
-      style={{ transitionDelay: `${index * 100}ms` }}
+      ref={cardRef}
+      className="steel-card opacity-0 translate-y-12 group [perspective:1000px] h-[360px] sm:h-[440px] lg:h-[480px] w-full cursor-pointer select-none"
+      onClick={toggleFlip}
     >
-      {/* Scoped CSS Animation & Hover Media Query Fix */}
       <style>{`
-        @keyframes rotation_481 {
-          0% {
-            transform: rotateZ(0deg);
-          }
+        @keyframes border-rotate {
           100% {
-            transform: rotateZ(360deg);
+            transform: rotate(360deg);
           }
         }
-        @media (hover: hover) {
-          .group:hover .flip-card-inner {
-            transform: rotateY(180deg);
-          }
+        .animate-border-rotate {
+          animation: border-rotate 4s linear infinite;
         }
       `}</style>
 
       {/* Flip Card Wrapper */}
       <div
-        className={`flip-card-inner relative w-full h-full duration-700 ease-in-out transition-transform [transform-style:preserve-3d] ${
-          isFlipped ? "[transform:rotateY(180deg)]" : ""
-        }`}
+        className="flip-card-inner relative w-full h-full [transform-style:preserve-3d]"
       >
         {/* FRONT SIDE (Capa em Repouso) */}
         <div className="absolute inset-0 w-full h-full bg-[#151515] rounded-xl overflow-hidden [backface-visibility:hidden] -webkit-[backface-visibility:hidden] flex items-center justify-center shadow-2xl">
@@ -92,11 +103,11 @@ const SteelAlloyFlipCard = ({
 
             {/* Central Microstructure Lens Image */}
             <div className="my-auto flex flex-col items-center justify-center w-full">
-              <div className="w-24 h-24 sm:w-36 sm:h-36 lg:w-40 lg:h-40 rounded-full overflow-hidden border-3 sm:border-4 border-[#222] group-hover:border-accent shadow-[inset_0_0_20px_rgba(0,0,0,0.8),0_0_25px_rgba(255,90,45,0.25)] transition-colors duration-500 relative bg-black shrink-0">
+              <div className="w-24 h-24 sm:w-36 sm:h-36 lg:w-40 lg:h-40 rounded-full overflow-hidden border-3 sm:border-4 border-[#222] shadow-[inset_0_0_20px_rgba(0,0,0,0.8),0_0_25px_rgba(255,90,45,0.25)] relative bg-black shrink-0">
                 <img
                   src={steel.image}
                   alt={`Microestrutura ${steel.name}`}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                  className="w-full h-full object-cover"
                 />
               </div>
 
@@ -113,7 +124,7 @@ const SteelAlloyFlipCard = ({
 
         {/* BACK SIDE (Informações Detalhadas) */}
         <div className="absolute inset-0 w-full h-full bg-[#161616] rounded-xl overflow-hidden [backface-visibility:hidden] -webkit-[backface-visibility:hidden] [transform:rotateY(180deg)] p-3 sm:p-5 flex flex-col justify-between border border-accent/50 shadow-[0_0_30px_rgba(255,90,45,0.2)] z-20">
-          <div className="flex flex-col justify-between h-full overflow-y-auto no-scrollbar pr-0.5">
+          <div className="flex flex-col justify-between h-full overflow-y-auto no-scrollbar pr-0.5" ref={frontBarsRef}>
             <div>
               {/* Back Header */}
               <div className="flex items-start justify-between border-b border-white/10 pb-1.5 sm:pb-3 mb-2 sm:mb-3">
@@ -139,8 +150,9 @@ const SteelAlloyFlipCard = ({
                   </div>
                   <div className="h-1 sm:h-1.5 bg-background/80 rounded-full overflow-hidden border border-border/40">
                     <div
-                      className="h-full gradient-molten rounded-full transition-all duration-1000"
-                      style={{ width: gridVisible ? `${statPct}%` : "0%" }}
+                      className="progress-bar-stat h-full gradient-molten rounded-full"
+                      data-width={`${statPct}%`}
+                      style={{ width: "0%" }}
                     />
                   </div>
                 </div>
@@ -153,7 +165,7 @@ const SteelAlloyFlipCard = ({
 
               {/* Properties Bars */}
               <div className="space-y-1 sm:space-y-2 mb-2 sm:mb-3">
-                {steel.properties.map((p, i) => (
+                {steel.properties.map((p) => (
                   <div key={p.label}>
                     <div className="flex justify-between text-[8px] sm:text-[10px] text-foreground/75 mb-0.5">
                       <span className="truncate mr-1">{p.label}</span>
@@ -161,11 +173,9 @@ const SteelAlloyFlipCard = ({
                     </div>
                     <div className="h-0.5 sm:h-1 bg-background/80 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-gradient-to-r from-accent to-molten rounded-full transition-all duration-700"
-                        style={{
-                          width: gridVisible ? `${p.value}%` : "0%",
-                          transitionDelay: `${index * 100 + i * 50}ms`,
-                        }}
+                        className="progress-bar-prop h-full bg-gradient-to-r from-accent to-molten rounded-full"
+                        data-width={`${p.value}%`}
+                        style={{ width: "0%" }}
                       />
                     </div>
                   </div>
@@ -197,18 +207,71 @@ const SteelAlloyFlipCard = ({
 };
 
 const SteelFamilySection = ({ id, badge, title, description, alloys, isFirst = false }: SteelFamilySectionProps) => {
-  const { ref: titleRef, isVisible: titleVisible } = useScrollAnimation();
-  const { ref: gridRef, isVisible: gridVisible } = useScrollAnimation({ threshold: 0.05 });
+  const containerRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const isReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (isReducedMotion) {
+      gsap.set(".steel-header, .steel-card", { opacity: 1, y: 0 });
+      gsap.set(".progress-bar-stat, .progress-bar-prop", { 
+        width: (i, el) => el.getAttribute("data-width") 
+      });
+      return;
+    }
+
+    const ctx = gsap.context(() => {
+      // Header Animation
+      gsap.from(".steel-header", {
+        y: 30,
+        opacity: 0,
+        duration: 0.8,
+        ease: "power3.out",
+        scrollTrigger: {
+          trigger: ".steel-header",
+          start: "top 85%",
+        }
+      });
+
+      // Cards stagger
+      gsap.to(".steel-card", {
+        y: 0,
+        opacity: 1,
+        duration: 0.8,
+        stagger: 0.15,
+        ease: "power3.out",
+        scrollTrigger: {
+          trigger: ".steel-grid",
+          start: "top 85%",
+        }
+      });
+
+      // Animate progress bars when cards come into view
+      ScrollTrigger.create({
+        trigger: ".steel-grid",
+        start: "top 75%",
+        onEnter: () => {
+          gsap.utils.toArray<HTMLElement>(".progress-bar-stat, .progress-bar-prop").forEach(bar => {
+            gsap.to(bar, {
+              width: bar.getAttribute("data-width") || "0%",
+              duration: 1.2,
+              ease: "power3.out"
+            });
+          });
+        }
+      });
+    }, containerRef);
+
+    return () => ctx.revert();
+  }, []);
 
   return (
-    <section id={id} className={`${isFirst ? "pt-24 sm:pt-32" : "pt-16 sm:pt-24"} pb-16 sm:pb-24 surface-forge relative overflow-hidden ${!isFirst ? "border-t border-border/40" : ""}`}>
+    <section 
+      id={id} 
+      ref={containerRef}
+      className={`${isFirst ? "pt-24 sm:pt-32" : "pt-16 sm:pt-24"} pb-16 sm:pb-24 surface-forge relative overflow-hidden ${!isFirst ? "border-t border-border/40" : ""}`}
+    >
       <div className="section-container relative z-10">
-        <div
-          ref={titleRef}
-          className={`text-center mb-8 sm:mb-16 transition-all duration-700 ${
-            titleVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-          }`}
-        >
+        <div className="steel-header text-center mb-8 sm:mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-5 rounded-full border border-accent/30 bg-accent/5 text-xs uppercase tracking-[0.2em] text-accent backdrop-blur-md">
             <Shield size={14} />
             {badge}
@@ -222,14 +285,13 @@ const SteelFamilySection = ({ id, badge, title, description, alloys, isFirst = f
           </p>
         </div>
 
-        {/* Mobile Grid: 2 columns per row */}
-        <div ref={gridRef} className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 lg:gap-8">
+        {/* Grid: 2 columns per row */}
+        <div className="steel-grid grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 lg:gap-8">
           {alloys.map((steel, index) => (
             <SteelAlloyFlipCard
               key={steel.name}
               steel={steel}
               index={index}
-              gridVisible={gridVisible}
             />
           ))}
         </div>
