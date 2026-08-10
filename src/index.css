@@ -1,52 +1,64 @@
-@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================
+   DESIGN TOKENS — Fundição Domínio
+   Industrial Premium Color System
+   ============================================ */
+
 @layer base {
   :root {
-    /* Paleta inspirada na logo - marrom/terra + laranja fundido */
-    --background: 30 15% 8%;
-    --foreground: 35 20% 90%;
+    /* Core palette — industrial dark */
+    --background: 30 15% 7%;
+    --foreground: 35 15% 90%;
 
-    --card: 30 12% 12%;
-    --card-foreground: 35 20% 90%;
+    --card: 30 12% 11%;
+    --card-foreground: 35 15% 90%;
 
-    --popover: 30 12% 12%;
-    --popover-foreground: 35 20% 90%;
+    --popover: 30 12% 11%;
+    --popover-foreground: 35 15% 90%;
 
-    /* Marrom terra escuro - cor principal da logo */
+    /* Primary — deep forge brown */
     --primary: 35 45% 22%;
     --primary-foreground: 35 20% 95%;
 
-    /* Cinza industrial */
-    --secondary: 30 8% 18%;
+    /* Secondary — industrial gray */
+    --secondary: 30 8% 16%;
     --secondary-foreground: 35 15% 85%;
 
-    --muted: 30 10% 15%;
-    --muted-foreground: 30 10% 60%;
+    --muted: 30 10% 14%;
+    --muted-foreground: 30 10% 55%;
 
-    /* Laranja fundido - accent vibrante */
+    /* Accent — incandescent orange */
     --accent: 25 95% 50%;
-    --accent-foreground: 30 15% 8%;
+    --accent-foreground: 30 15% 7%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 30 15% 20%;
-    --input: 30 15% 20%;
+    --border: 30 12% 18%;
+    --input: 30 12% 18%;
     --ring: 25 95% 50%;
 
     --radius: 0.5rem;
 
-    /* Custom colors for foundry theme */
+    /* Foundry specific */
     --molten: 20 100% 55%;
     --molten-glow: 25 100% 65%;
     --iron: 30 8% 35%;
     --steel: 30 5% 50%;
+    --ember: 15 100% 45%;
+    --copper: 25 75% 45%;
+    --graphite: 30 5% 25%;
   }
 }
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
 
 @layer base {
   * {
@@ -54,67 +66,157 @@
   }
 
   html {
-    scroll-behavior: smooth;
+    scroll-behavior: auto; /* Lenis handles smooth scrolling */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html.lenis, html.lenis body {
+    height: auto;
+  }
+
+  .lenis.lenis-smooth {
+    scroll-behavior: auto;
+  }
+
+  .lenis.lenis-smooth [data-lenis-prevent] {
+    overscroll-behavior: contain;
+  }
+
+  .lenis.lenis-stopped {
+    overflow: hidden;
   }
 
   body {
     @apply bg-background text-foreground font-body antialiased;
+    overflow-x: hidden;
   }
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading;
+    text-wrap: balance;
+  }
+
+  /* Selection color */
+  ::selection {
+    background: hsl(var(--accent) / 0.3);
+    color: hsl(var(--foreground));
+  }
+
+  /* Custom scrollbar for non-Lenis browsers */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--background));
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--accent) / 0.5);
   }
 }
 
+/* ============================================
+   COMPONENT CLASSES
+   ============================================ */
+
 @layer components {
+  /* Container */
   .section-container {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
   }
 
+  /* Gradients */
   .gradient-molten {
     background: linear-gradient(135deg, hsl(var(--molten)) 0%, hsl(var(--accent)) 50%, hsl(var(--molten-glow)) 100%);
   }
 
   .gradient-dark {
-    background: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(30 12% 6%) 100%);
+    background: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(30 12% 5%) 100%);
+  }
+
+  .gradient-forge {
+    background: linear-gradient(180deg,
+      hsl(var(--background)) 0%,
+      hsl(30 15% 9%) 40%,
+      hsl(25 20% 8%) 70%,
+      hsl(var(--background)) 100%
+    );
   }
 
   .text-gradient-molten {
     @apply bg-clip-text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    background-image: linear-gradient(135deg, hsl(var(--molten)) 0%, hsl(var(--accent)) 100%);
+    background-image: linear-gradient(135deg, hsl(var(--molten)) 0%, hsl(var(--accent)) 50%, hsl(var(--molten-glow)) 100%);
   }
 
+  .text-gradient-steel {
+    @apply bg-clip-text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-image: linear-gradient(135deg, hsl(var(--steel)) 0%, hsl(30 5% 70%) 100%);
+  }
+
+  /* Glows */
   .glow-molten {
-    box-shadow: 0 0 30px hsl(var(--accent) / 0.3), 0 0 60px hsl(var(--molten) / 0.2);
+    box-shadow: 0 0 30px hsl(var(--accent) / 0.25), 0 0 60px hsl(var(--molten) / 0.15);
+  }
+
+  .glow-molten-sm {
+    box-shadow: 0 0 15px hsl(var(--accent) / 0.2), 0 0 30px hsl(var(--molten) / 0.1);
   }
 
   .border-glow {
     @apply border border-accent/30;
-    box-shadow: 0 0 15px hsl(var(--accent) / 0.15);
+    box-shadow: 0 0 15px hsl(var(--accent) / 0.12);
   }
 
+  /* Glass */
   .glass-dark {
-    background: linear-gradient(180deg, hsl(30 12% 14% / 0.55) 0%, hsl(30 12% 10% / 0.65) 100%);
-    backdrop-filter: blur(14px) saturate(1.1);
-    -webkit-backdrop-filter: blur(14px) saturate(1.1);
-    border: 1px solid hsl(30 15% 28% / 0.4);
-    box-shadow: inset 0 1px 0 hsl(35 20% 90% / 0.04), 0 20px 40px -20px hsl(0 0% 0% / 0.6);
+    background: linear-gradient(180deg, hsl(30 12% 13% / 0.6) 0%, hsl(30 12% 9% / 0.7) 100%);
+    backdrop-filter: blur(16px) saturate(1.1);
+    -webkit-backdrop-filter: blur(16px) saturate(1.1);
+    border: 1px solid hsl(30 15% 25% / 0.35);
+    box-shadow: inset 0 1px 0 hsl(35 20% 90% / 0.03), 0 20px 40px -20px hsl(0 0% 0% / 0.5);
   }
 
+  .glass-subtle {
+    background: hsl(var(--card) / 0.4);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid hsl(var(--border) / 0.4);
+  }
+
+  /* Surfaces */
   .surface-forge {
     background:
-      radial-gradient(ellipse at 20% 0%, hsl(var(--molten) / 0.08) 0%, transparent 50%),
-      radial-gradient(ellipse at 80% 100%, hsl(var(--accent) / 0.06) 0%, transparent 55%),
-      linear-gradient(180deg, hsl(var(--background)) 0%, hsl(30 12% 6%) 100%);
+      radial-gradient(ellipse at 20% 0%, hsl(var(--molten) / 0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 100%, hsl(var(--accent) / 0.04) 0%, transparent 55%),
+      linear-gradient(180deg, hsl(var(--background)) 0%, hsl(30 12% 5%) 100%);
   }
 
+  .surface-steel {
+    background:
+      radial-gradient(ellipse at 50% 0%, hsl(var(--steel) / 0.08) 0%, transparent 50%),
+      linear-gradient(180deg, hsl(var(--background)) 0%, hsl(30 8% 6%) 100%);
+  }
+
+  /* Dividers */
   .divider-molten {
     height: 1px;
-    background: linear-gradient(90deg, transparent, hsl(var(--accent) / 0.4) 20%, hsl(var(--molten) / 0.6) 50%, hsl(var(--accent) / 0.4) 80%, transparent);
+    background: linear-gradient(90deg, transparent, hsl(var(--accent) / 0.35) 20%, hsl(var(--molten) / 0.5) 50%, hsl(var(--accent) / 0.35) 80%, transparent);
   }
 
+  .divider-steel {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, hsl(var(--border) / 0.6) 30%, hsl(var(--steel) / 0.3) 50%, hsl(var(--border) / 0.6) 70%, transparent);
+  }
+
+  /* Edge glow border effect */
   .edge-glow {
     position: relative;
   }
@@ -124,13 +226,48 @@
     inset: -1px;
     border-radius: inherit;
     padding: 1px;
-    background: linear-gradient(135deg, hsl(var(--accent) / 0.5), transparent 40%, transparent 60%, hsl(var(--molten) / 0.35));
+    background: linear-gradient(135deg, hsl(var(--accent) / 0.4), transparent 40%, transparent 60%, hsl(var(--molten) / 0.25));
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
     -webkit-mask-composite: xor;
             mask-composite: exclude;
     pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+
+  .edge-glow:hover::before {
+    background: linear-gradient(135deg, hsl(var(--accent) / 0.6), transparent 35%, transparent 65%, hsl(var(--molten) / 0.4));
+  }
+
+  /* Technical label style */
+  .label-tech {
+    @apply text-[10px] sm:text-xs font-mono uppercase tracking-[0.2em] text-foreground/50;
+  }
+
+  .badge-accent {
+    @apply inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-accent/30 bg-accent/5 text-xs uppercase tracking-[0.2em] text-accent backdrop-blur-md;
+  }
+
+  /* Technical grid lines background */
+  .bg-grid {
+    background-image:
+      linear-gradient(hsl(var(--border) / 0.15) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--border) / 0.15) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+
+  /* Page transition overlay */
+  .page-transition-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    pointer-events: none;
+    background: hsl(var(--background));
   }
 }
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
 
 @layer utilities {
   .no-scrollbar::-webkit-scrollbar {
@@ -141,6 +278,7 @@
     scrollbar-width: none;
   }
 
+  /* Animations */
   .animate-float {
     animation: float 6s ease-in-out infinite;
   }
@@ -169,6 +307,10 @@
     animation: shimmer 2s linear infinite;
   }
 
+  .animate-border-rotate {
+    animation: rotation_481 4s linear infinite;
+  }
+
   @keyframes float {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-10px); }
@@ -176,77 +318,41 @@
 
   @keyframes glow-pulse {
     0%, 100% { 
-      box-shadow: 0 0 20px hsl(var(--accent) / 0.3), 0 0 40px hsl(var(--molten) / 0.2);
+      box-shadow: 0 0 20px hsl(var(--accent) / 0.25), 0 0 40px hsl(var(--molten) / 0.15);
     }
     50% { 
-      box-shadow: 0 0 30px hsl(var(--accent) / 0.5), 0 0 60px hsl(var(--molten) / 0.3);
+      box-shadow: 0 0 30px hsl(var(--accent) / 0.4), 0 0 60px hsl(var(--molten) / 0.25);
     }
   }
 
   @keyframes fade-up {
-    from {
-      opacity: 0;
-      transform: translateY(30px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   @keyframes slide-left {
-    from {
-      opacity: 0;
-      transform: translateX(-50px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
+    from { opacity: 0; transform: translateX(-50px); }
+    to { opacity: 1; transform: translateX(0); }
   }
 
   @keyframes slide-right {
-    from {
-      opacity: 0;
-      transform: translateX(50px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
+    from { opacity: 0; transform: translateX(50px); }
+    to { opacity: 1; transform: translateX(0); }
   }
 
   @keyframes scale-up {
-    from {
-      opacity: 0;
-      transform: scale(0.8);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
+    from { opacity: 0; transform: scale(0.8); }
+    to { opacity: 1; transform: scale(1); }
   }
 
   @keyframes shimmer {
-    0% {
-      background-position: -200% 0;
-    }
-    100% {
-      background-position: 200% 0;
-    }
-  }
-
-  .animate-border-rotate {
-    animation: rotation_481 4s linear infinite;
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
   }
 
   @keyframes rotation_481 {
-    0% {
-      transform: rotate(0deg);
-    }
-    100% {
-      transform: rotate(360deg);
-    }
+    0% { transform: rotateZ(0deg); }
+    100% { transform: rotateZ(360deg); }
   }
 
   @keyframes ember-rise {
@@ -261,5 +367,53 @@
       transform: translate(var(--drift, 0px), -110vh) scale(0.3);
       opacity: 0;
     }
+  }
+
+  /* Reveal animation helpers */
+  .gsap-reveal {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+
+  .gsap-reveal-left {
+    opacity: 0;
+    transform: translateX(-40px);
+  }
+
+  .gsap-reveal-right {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+
+  .gsap-reveal-scale {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .gsap-reveal,
+  .gsap-reveal-left,
+  .gsap-reveal-right,
+  .gsap-reveal-scale {
+    opacity: 1;
+    transform: none;
+  }
+
+  .animate-float,
+  .animate-glow-pulse,
+  .animate-shimmer,
+  .animate-border-rotate {
+    animation: none;
   }
 }

@@ -1,5 +1,6 @@
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
+import gsap from "gsap";
 
 interface PageTransitionProps {
   children: ReactNode;
@@ -7,34 +8,88 @@ interface PageTransitionProps {
 
 const PageTransition = ({ children }: PageTransitionProps) => {
   const location = useLocation();
+  const contentRef = useRef<HTMLDivElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
   const [displayChildren, setDisplayChildren] = useState(children);
-  const [stage, setStage] = useState<"in" | "out">("in");
+  const isFirstRender = useRef(true);
 
   useEffect(() => {
-    setStage("out");
-    const t = setTimeout(() => {
+    // Skip animation on first render
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
       setDisplayChildren(children);
-      setStage("in");
-      window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
-    }, 200);
-    return () => clearTimeout(t);
+      return;
+    }
+
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const overlay = overlayRef.current;
+    const content = contentRef.current;
+
+    if (!overlay || !content || prefersReduced) {
+      setDisplayChildren(children);
+      return;
+    }
+
+    // Transition timeline
+    const tl = gsap.timeline({
+      onComplete: () => {
+        setDisplayChildren(children);
+      },
+    });
+
+    // Phase 1: Overlay clips in from bottom
+    tl.set(overlay, { clipPath: "inset(100% 0 0 0)", display: "block" })
+      .to(overlay, {
+        clipPath: "inset(0% 0 0 0)",
+        duration: 0.35,
+        ease: "power3.inOut",
+      })
+      // Phase 2: Content swap happens in onComplete above
+      // Phase 3: Overlay clips out upward
+      .to(overlay, {
+        clipPath: "inset(0 0 100% 0)",
+        duration: 0.35,
+        ease: "power3.inOut",
+        delay: 0.1,
+      })
+      .set(overlay, { display: "none" });
+
+    return () => {
+      tl.kill();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
 
+  // When displayChildren changes, animate content in
   useEffect(() => {
-    setDisplayChildren(children);
-  }, [children]);
+    const content = contentRef.current;
+    if (!content || isFirstRender.current) return;
+
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReduced) return;
+
+    gsap.fromTo(
+      content,
+      { opacity: 0, y: 15 },
+      { opacity: 1, y: 0, duration: 0.5, ease: "power2.out", delay: 0.1 }
+    );
+  }, [displayChildren]);
 
   return (
-    <div
-      className={`transition-all duration-500 ease-out ${
-        stage === "in"
-          ? "opacity-100 translate-y-0"
-          : "opacity-0 translate-y-2"
-      }`}
-    >
-      {displayChildren}
-    </div>
+    <>
+      {/* Transition overlay */}
+      <div
+        ref={overlayRef}
+        className="page-transition-overlay"
+        style={{ display: "none" }}
+      >
+        {/* Subtle accent line at the leading edge */}
+        <div className="absolute bottom-0 left-0 right-0 h-[2px] gradient-molten" />
+      </div>
+
+      {/* Page content */}
+      <div ref={contentRef}>{displayChildren}</div>
+    </>
   );
 };
 
