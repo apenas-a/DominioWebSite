@@ -1,4 +1,3 @@
-import Layout from "@/components/layout/Layout";
 import MoltenParticles from "@/components/MoltenParticles";
 import { Mail, MessageCircle, MapPin, Flame, Check, Layers, Cpu, FlaskConical } from "lucide-react";
 import { useEffect, useRef } from "react";
@@ -143,8 +142,7 @@ const Orcamento = () => {
   }, []);
 
   return (
-    <Layout>
-      <section ref={sectionRef} className="relative py-12 sm:py-24 bg-background overflow-hidden min-h-screen pt-24 sm:pt-32">
+    <section ref={sectionRef} className="relative py-12 sm:py-24 bg-background overflow-hidden min-h-screen pt-24 sm:pt-32">
         {/* Background atmosphere */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full bg-accent/3 blur-[120px]" />
@@ -338,7 +336,6 @@ const Orcamento = () => {
           </div>
         </div>
       </section>
-    </Layout>
   );
 };
 

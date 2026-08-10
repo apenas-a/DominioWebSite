@@ -31,15 +31,19 @@ export function useLenisInit() {
     lenisInstance = lenis;
 
     // Sync Lenis with GSAP ScrollTrigger
-    lenis.on('scroll', ScrollTrigger.update);
+    const updateScrollTrigger = () => ScrollTrigger.update();
+    lenis.on('scroll', updateScrollTrigger);
 
-    gsap.ticker.add((time) => {
+    const tick = (time: number) => {
       lenis.raf(time * 1000);
-    });
+    };
+    gsap.ticker.add(tick);
 
     gsap.ticker.lagSmoothing(0);
 
     return () => {
+      gsap.ticker.remove(tick);
+      lenis.off('scroll', updateScrollTrigger);
       lenis.destroy();
       lenisRef.current = null;
       lenisInstance = null;

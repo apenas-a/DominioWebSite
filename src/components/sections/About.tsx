@@ -47,30 +47,38 @@ const About = () => {
 
     const ctx = gsap.context(() => {
       // Title reveal
-      gsap.from(".about-title", {
-        opacity: 0,
-        y: 30,
-        duration: 0.7,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: ".about-title",
-          start: "top 85%",
-          toggleActions: "play none none none",
-        },
-      });
+      gsap.fromTo(
+        ".about-title",
+        { opacity: 0, y: 30 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.7,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: ".about-title",
+            start: "top 90%",
+            toggleActions: "play none none none",
+          },
+        }
+      );
 
-      // Image parallax
-      gsap.from(image, {
-        opacity: 0,
-        x: -40,
-        duration: 0.8,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: image,
-          start: "top 80%",
-          toggleActions: "play none none none",
-        },
-      });
+      // Image reveal
+      gsap.fromTo(
+        image,
+        { opacity: 0, x: -40 },
+        {
+          opacity: 1,
+          x: 0,
+          duration: 0.8,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: image,
+            start: "top 85%",
+            toggleActions: "play none none none",
+          },
+        }
+      );
 
       // Image parallax on scroll
       const imgInner = image.querySelector("img");
@@ -88,19 +96,23 @@ const About = () => {
       }
 
       // Highlight cards stagger
-      gsap.from(".about-card", {
-        opacity: 0,
-        y: 30,
-        x: 20,
-        stagger: 0.12,
-        duration: 0.6,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: ".about-cards-grid",
-          start: "top 80%",
-          toggleActions: "play none none none",
-        },
-      });
+      gsap.fromTo(
+        ".about-card",
+        { opacity: 0, y: 30, x: 20 },
+        {
+          opacity: 1,
+          y: 0,
+          x: 0,
+          stagger: 0.12,
+          duration: 0.6,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: ".about-cards-grid",
+            start: "top 85%",
+            toggleActions: "play none none none",
+          },
+        }
+      );
     }, section);
 
     return () => ctx.revert();

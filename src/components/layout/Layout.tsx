@@ -1,17 +1,13 @@
-import { ReactNode, useEffect } from "react";
+import { useEffect } from "react";
 import Header from "./Header";
 import Footer from "./Footer";
 import PageTransition from "@/components/PageTransition";
 import MobileActionBar from "./MobileActionBar";
 import { useLenisInit, getLenis } from "@/hooks/useLenis";
-import { useLocation } from "react-router-dom";
+import { useLocation, Outlet } from "react-router-dom";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-interface LayoutProps {
-  children: ReactNode;
-}
-
-const Layout = ({ children }: LayoutProps) => {
+const Layout = () => {
   useLenisInit();
   const location = useLocation();
 
@@ -24,19 +20,29 @@ const Layout = ({ children }: LayoutProps) => {
       window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
     }
 
-    // Delay refresh to let the new page render
-    const t = setTimeout(() => {
+    const t1 = setTimeout(() => {
+      ScrollTrigger.update();
       ScrollTrigger.refresh();
-    }, 100);
+    }, 50);
 
-    return () => clearTimeout(t);
+    const t2 = setTimeout(() => {
+      ScrollTrigger.update();
+      ScrollTrigger.refresh();
+    }, 300);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
   }, [location.pathname]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       <main className="flex-1 pb-20 md:pb-0">
-        <PageTransition>{children}</PageTransition>
+        <PageTransition>
+          <Outlet />
+        </PageTransition>
       </main>
       <Footer />
       <MobileActionBar />

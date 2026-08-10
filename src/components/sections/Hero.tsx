@@ -16,6 +16,17 @@ const Hero = () => {
   const overlayRef = useRef<HTMLDivElement>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
+  // Safety fallback so content animation always runs even if video event was cached or delayed
+  useEffect(() => {
+    if (videoRef.current && videoRef.current.readyState >= 2) {
+      setIsLoaded(true);
+    }
+    const timer = setTimeout(() => {
+      setIsLoaded(true);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Entrance animation
   useEffect(() => {
     if (!isLoaded) return;

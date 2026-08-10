@@ -36,56 +36,72 @@ const HomeProcess = () => {
 
     const ctx = gsap.context(() => {
       // Section title
-      gsap.from(".process-home-title", {
-        opacity: 0,
-        y: 30,
-        duration: 0.7,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: ".process-home-title",
-          start: "top 85%",
-          toggleActions: "play none none none",
-        },
-      });
+      gsap.fromTo(
+        ".process-home-title",
+        { opacity: 0, y: 30 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.7,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: el,
+            start: "top 85%",
+            toggleActions: "play none none none",
+          },
+        }
+      );
 
       // Steps stagger
-      gsap.from(".process-home-step", {
-        opacity: 0,
-        y: 40,
-        stagger: 0.15,
-        duration: 0.6,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: ".process-home-steps",
-          start: "top 80%",
-          toggleActions: "play none none none",
-        },
-      });
+      gsap.fromTo(
+        ".process-home-step",
+        { opacity: 0, y: 40 },
+        {
+          opacity: 1,
+          y: 0,
+          stagger: 0.15,
+          duration: 0.6,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: el,
+            start: "top 85%",
+            toggleActions: "play none none none",
+          },
+        }
+      );
 
       // Connection line
-      gsap.from(".process-home-line", {
-        scaleX: 0,
-        duration: 1,
-        ease: "power2.inOut",
-        scrollTrigger: {
-          trigger: ".process-home-steps",
-          start: "top 75%",
-          toggleActions: "play none none none",
-        },
-      });
+      gsap.fromTo(
+        ".process-home-line",
+        { scaleX: 0 },
+        {
+          scaleX: 1,
+          duration: 1,
+          ease: "power2.inOut",
+          scrollTrigger: {
+            trigger: el,
+            start: "top 80%",
+            toggleActions: "play none none none",
+          },
+        }
+      );
 
       // CTA
-      gsap.from(".process-home-cta", {
-        opacity: 0,
-        y: 20,
-        duration: 0.5,
-        ease: "power2.out",
-        scrollTrigger: {
-          trigger: ".process-home-cta",
-          start: "top 90%",
-          toggleActions: "play none none none",
-        },
-      });
+      gsap.fromTo(
+        ".process-home-cta",
+        { opacity: 0, y: 20 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.5,
+          ease: "power2.out",
+          scrollTrigger: {
+            trigger: el,
+            start: "top 90%",
+            toggleActions: "play none none none",
+          },
+        }
+      );
     }, el);
 
     return () => ctx.revert();

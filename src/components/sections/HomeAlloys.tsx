@@ -90,32 +90,45 @@ const AlloyAccordionGrid = ({
     if (prefersReduced) return;
 
     const ctx = gsap.context(() => {
-      // Header reveal
-      gsap.from(".alloy-header", {
-        opacity: 0,
-        y: 30,
-        duration: 0.7,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: el,
-          start: "top 80%",
-          toggleActions: "play none none none",
-        },
-      });
+      const header = el.querySelector(".alloy-header");
+      const cards = el.querySelectorAll(".alloy-card");
 
-      // Cards stagger
-      gsap.from(".alloy-card", {
-        opacity: 0,
-        y: 40,
-        stagger: 0.12,
-        duration: 0.6,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: ".alloy-cards-container",
-          start: "top 80%",
-          toggleActions: "play none none none",
-        },
-      });
+      if (header) {
+        gsap.fromTo(
+          header,
+          { opacity: 0, y: 30 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.7,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: el,
+              start: "top 85%",
+              toggleActions: "play none none none",
+            },
+          }
+        );
+      }
+
+      if (cards.length > 0) {
+        gsap.fromTo(
+          cards,
+          { opacity: 0, y: 40 },
+          {
+            opacity: 1,
+            y: 0,
+            stagger: 0.12,
+            duration: 0.6,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: el,
+              start: "top 85%",
+              toggleActions: "play none none none",
+            },
+          }
+        );
+      }
     }, el);
 
     return () => ctx.revert();

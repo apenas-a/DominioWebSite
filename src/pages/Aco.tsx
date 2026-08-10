@@ -1,10 +1,9 @@
-import Layout from "@/components/layout/Layout";
 import SteelFamilySection from "@/components/sections/SteelFamilySection";
 import SteelComparison from "@/components/sections/SteelComparison";
 import { carbonSteels, lowAlloySteels, highAlloySteels, stainlessSteels } from "@/data/steels";
 
 const Aco = () => (
-  <Layout>
+  <>
     <SteelFamilySection
       id="carbono"
       badge="Aços Carbono"
@@ -35,7 +34,7 @@ const Aco = () => (
       alloys={stainlessSteels}
     />
     <SteelComparison />
-  </Layout>
+  </>
 );
 
 export default Aco;
