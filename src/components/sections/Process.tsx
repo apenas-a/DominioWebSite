@@ -152,8 +152,8 @@ const Process = () => {
                     scrollTrigger: {
                       trigger: section,
                       containerAnimation: scrollTween,
-                      start: "left 85%",
-                      toggleActions: "play none none reverse",
+                      start: "left 90%",
+                      toggleActions: "play none none none",
                     },
                   }
                 );
@@ -171,8 +171,8 @@ const Process = () => {
                     scrollTrigger: {
                       trigger: section,
                       containerAnimation: scrollTween,
-                      start: "left 85%",
-                      toggleActions: "play none none reverse",
+                      start: "left 90%",
+                      toggleActions: "play none none none",
                     },
                   }
                 );

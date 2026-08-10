@@ -27,7 +27,8 @@ const ProcessQuality = () => {
             ease: "power3.out",
             scrollTrigger: {
               trigger: sectionRef.current,
-              start: "top 75%",
+              start: "top 85%",
+              toggleActions: "play none none none",
             },
           }
         );
