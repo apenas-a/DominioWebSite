@@ -87,11 +87,10 @@ const Process = () => {
               opacity: 1,
               y: 0,
               duration: 0.8,
-              stagger: 0.15,
+              stagger: 0.2,
               scrollTrigger: {
                 trigger: headerRef.current,
-                start: "top 95%",
-                toggleActions: "play none none none",
+                start: "top 80%",
               },
             }
           );
@@ -103,7 +102,7 @@ const Process = () => {
           const horizContainer = horizontalRef.current;
           if (!container || !horizContainer) return;
 
-          const sections = gsap.utils.toArray<HTMLElement>(".step-panel");
+          const sections = gsap.utils.toArray(".step-panel");
 
           const scrollTween = gsap.to(sections, {
             xPercent: -100 * (sections.length - 1),
@@ -129,7 +128,7 @@ const Process = () => {
           });
 
           // Step animations inside container
-          sections.forEach((section: HTMLElement, index: number) => {
+          sections.forEach((section: any, index: number) => {
             const text = section.querySelector(".step-text");
             const img = section.querySelector(".step-img");
             const node = section.querySelector(".step-node");
@@ -152,7 +151,7 @@ const Process = () => {
                     scrollTrigger: {
                       trigger: section,
                       containerAnimation: scrollTween,
-                      start: "left 90%",
+                      start: "left 85%",
                       toggleActions: "play none none none",
                     },
                   }
@@ -171,7 +170,7 @@ const Process = () => {
                     scrollTrigger: {
                       trigger: section,
                       containerAnimation: scrollTween,
-                      start: "left 90%",
+                      start: "left 85%",
                       toggleActions: "play none none none",
                     },
                   }
@@ -180,43 +179,40 @@ const Process = () => {
             }
 
             // Image Parallax
-            if (img) {
-              gsap.fromTo(
-                img,
-                { xPercent: -15 },
-                {
-                  xPercent: 15,
-                  ease: "none",
-                  scrollTrigger: {
-                    trigger: section,
-                    containerAnimation: scrollTween,
-                    start: "left right",
-                    end: "right left",
-                    scrub: true,
-                  },
-                }
-              );
-            }
+            gsap.fromTo(
+              img,
+              { xPercent: -15 },
+              {
+                xPercent: 15,
+                ease: "none",
+                scrollTrigger: {
+                  trigger: section,
+                  containerAnimation: scrollTween,
+                  start: "left right",
+                  end: "right left",
+                  scrub: true,
+                },
+              }
+            );
           });
         });
 
         // Mobile vertical layout (only applies < 768px)
         mm.add("(max-width: 767px)", () => {
-          const sections = gsap.utils.toArray<HTMLElement>(".step-panel-mobile");
+          const sections = gsap.utils.toArray(".step-panel-mobile");
           
-          sections.forEach((section: HTMLElement) => {
+          sections.forEach((section: any) => {
             gsap.fromTo(
               section,
-              { opacity: 0, y: 40 },
+              { opacity: 0, y: 50 },
               {
                 opacity: 1,
                 y: 0,
-                duration: 0.6,
+                duration: 0.8,
                 ease: "power2.out",
                 scrollTrigger: {
                   trigger: section,
-                  start: "top 90%",
-                  toggleActions: "play none none none",
+                  start: "top 80%",
                 },
               }
             );

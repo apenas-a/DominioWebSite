@@ -2,8 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Shield, ArrowDown } from "lucide-react";
 import heroVideo from "@/assets/hero-foundry.mp4";
-import MoltenParticles from "@/components/MoltenParticles";
-import Hero3DCanvas from "@/components/3d/Hero3DCanvas";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
@@ -213,10 +211,6 @@ const Hero = () => {
         <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-transparent to-background" />
         <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-background via-background/95 to-transparent" />
       </div>
-
-      {/* Particles */}
-      <MoltenParticles density="medium" />
-      <Hero3DCanvas />
 
       {/* Scroll transition overlay */}
       <div
