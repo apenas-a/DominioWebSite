@@ -1,19 +1,176 @@
-import { ArrowDown, Shield } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { Shield, ArrowDown } from "lucide-react";
 import heroVideo from "@/assets/hero-foundry.mp4";
-import { useEffect, useState } from "react";
-import { revealBlur, staggerContainer } from "@/components/motion/variants";
+import MoltenParticles from "@/components/MoltenParticles";
+import Hero3DCanvas from "@/components/3d/Hero3DCanvas";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
 
 const Hero = () => {
+  const sectionRef = useRef<HTMLElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
+  // Entrance animation
   useEffect(() => {
-    setIsLoaded(true);
+    if (!isLoaded) return;
+
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReduced) return;
+
+    const content = contentRef.current;
+    if (!content) return;
+
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+
+      tl.from(".hero-badge", {
+        opacity: 0,
+        y: 20,
+        scale: 0.95,
+        duration: 0.6,
+        delay: 0.2,
+      })
+        .from(
+          ".hero-title",
+          {
+            opacity: 0,
+            y: 40,
+            duration: 0.8,
+          },
+          "-=0.3"
+        )
+        .from(
+          ".hero-subtitle",
+          {
+            opacity: 0,
+            y: 30,
+            duration: 0.6,
+          },
+          "-=0.4"
+        )
+        .from(
+          ".hero-separator",
+          {
+            scaleX: 0,
+            opacity: 0,
+            duration: 0.5,
+          },
+          "-=0.3"
+        )
+        .from(
+          ".hero-description",
+          {
+            opacity: 0,
+            y: 25,
+            duration: 0.6,
+          },
+          "-=0.2"
+        )
+        .from(
+          ".hero-cta",
+          {
+            opacity: 0,
+            y: 20,
+            stagger: 0.12,
+            duration: 0.5,
+          },
+          "-=0.2"
+        )
+        .from(
+          ".hero-scroll",
+          {
+            opacity: 0,
+            duration: 0.8,
+          },
+          "-=0.2"
+        );
+    }, content);
+
+    return () => ctx.revert();
+  }, [isLoaded]);
+
+  // Parallax on scroll — hero fades and shifts
+  useEffect(() => {
+    const section = sectionRef.current;
+    const video = videoRef.current;
+    const content = contentRef.current;
+    const overlay = overlayRef.current;
+
+    if (!section || !video || !content || !overlay) return;
+
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReduced) return;
+
+    const ctx = gsap.context(() => {
+      // Video parallax — moves slower than scroll
+      gsap.to(video, {
+        y: 120,
+        scale: 1.15,
+        ease: "none",
+        scrollTrigger: {
+          trigger: section,
+          start: "top top",
+          end: "bottom top",
+          scrub: true,
+        },
+      });
+
+      // Content fades out and moves up
+      gsap.to(content, {
+        y: -80,
+        opacity: 0,
+        ease: "none",
+        scrollTrigger: {
+          trigger: section,
+          start: "20% top",
+          end: "60% top",
+          scrub: true,
+        },
+      });
+
+      // Overlay darkens
+      gsap.to(overlay, {
+        opacity: 1,
+        ease: "none",
+        scrollTrigger: {
+          trigger: section,
+          start: "40% top",
+          end: "90% top",
+          scrub: true,
+        },
+      });
+    });
+
+    return () => ctx.revert();
+  }, []);
+
+  // Scroll indicator bounce
+  useEffect(() => {
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReduced) return;
+
+    const ctx = gsap.context(() => {
+      gsap.to(".hero-scroll-arrow", {
+        y: 10,
+        duration: 1.2,
+        repeat: -1,
+        yoyo: true,
+        ease: "power1.inOut",
+      });
+    });
+
+    return () => ctx.revert();
   }, []);
 
   return (
     <section
+      ref={sectionRef}
       id="inicio"
       className="relative min-h-screen flex items-center justify-center overflow-hidden"
     >
@@ -21,6 +178,7 @@ const Hero = () => {
       <div className="absolute inset-0">
         <div className="absolute inset-0 overflow-hidden">
           <video
+            ref={videoRef}
             src={heroVideo}
             autoPlay
             loop
@@ -28,91 +186,94 @@ const Hero = () => {
             playsInline
             preload="auto"
             aria-label="Vazamento de metal fundido em molde"
-            className={`absolute left-1/2 top-1/2 min-w-full min-h-full w-auto h-auto -translate-x-1/2 -translate-y-1/2 object-cover transition-opacity duration-1000 ${
+            onCanPlayThrough={() => setIsLoaded(true)}
+            onLoadedData={() => setIsLoaded(true)}
+            className={`absolute left-1/2 top-1/2 min-w-full min-h-full w-auto h-auto object-cover transition-opacity duration-1500 ${
               isLoaded ? "opacity-100" : "opacity-0"
             }`}
             style={{
-              transform: "translate(-50%, -52%) scale(1.12)",
+              transform: "translate(-50%, -52%) scale(1.1)",
             }}
           />
         </div>
 
-        {/* Gradient overlays — radial vignette + edge gradients */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-background/40 to-background/90" />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-transparent to-background" />
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background via-background/90 to-transparent" />
+        {/* Vignette overlays */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_20%,hsl(30_15%_7%/0.5)_70%,hsl(30_15%_7%/0.9)_100%)]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-transparent to-background" />
+        <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-background via-background/95 to-transparent" />
       </div>
 
+      {/* Particles */}
+      <MoltenParticles density="medium" />
+      <Hero3DCanvas />
+
+      {/* Scroll transition overlay */}
+      <div
+        ref={overlayRef}
+        className="absolute inset-0 bg-background pointer-events-none"
+        style={{ opacity: 0 }}
+      />
+
       {/* Content */}
-      <div className="relative z-10 section-container text-center pt-12 sm:pt-20">
-        <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          animate={isLoaded ? "visible" : "hidden"}
-          className="flex flex-col items-center"
-        >
-          <motion.div variants={revealBlur} className="inline-flex items-center gap-2 px-4 py-1.5 mb-6 rounded-full border border-accent/30 bg-accent/5 text-xs uppercase tracking-[0.2em] text-accent backdrop-blur-md">
+      <div ref={contentRef} className="relative z-10 section-container text-center pt-16 sm:pt-24">
+        <div className="flex flex-col items-center">
+          {/* Badge */}
+          <div className="hero-badge badge-accent mb-6">
             <Shield size={14} />
             Fundição de Ferro e Aço
-          </motion.div>
+          </div>
 
-          <motion.h1
-            variants={revealBlur}
-            className="font-heading text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-bold uppercase tracking-tight mb-4 sm:mb-6"
-          >
+          {/* Title */}
+          <h1 className="hero-title font-heading text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-bold uppercase tracking-tight mb-3 sm:mb-4">
             Fundição{" "}
             <span className="text-gradient-molten">Domínio</span>
-          </motion.h1>
+          </h1>
 
-          <motion.p
-            variants={revealBlur}
-            className="text-lg sm:text-xl md:text-2xl text-foreground/80 font-light italic mb-2 sm:mb-4"
-          >
-            "Entender para atender"
-          </motion.p>
+          {/* Subtitle */}
+          <p className="hero-subtitle text-sm sm:text-base md:text-lg uppercase tracking-[0.3em] text-foreground/50 font-light mb-4 sm:mb-5">
+            Ferro • Aço • Engenharia
+          </p>
 
-          <motion.p
-            variants={revealBlur}
-            className="text-sm sm:text-base md:text-lg lg:text-xl text-foreground/70 max-w-2xl mx-auto mb-6 sm:mb-10"
-          >
-            Fundição de ferro (nodular, vermicular e cinzento) e aço carbono (1020, 1030 e 1045)
-            com engenharia de precisão para a indústria brasileira.
-          </motion.p>
+          {/* Separator */}
+          <div className="hero-separator w-20 h-[2px] gradient-molten mb-5 sm:mb-6 origin-center" />
 
-          <motion.div
-            variants={revealBlur}
-            className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center w-full"
-          >
+          {/* Description */}
+          <p className="hero-description text-sm sm:text-base md:text-lg text-foreground/65 max-w-2xl mx-auto mb-4 sm:mb-5 leading-relaxed">
+            &quot;Entender para atender&quot;
+          </p>
+
+          <p className="hero-description text-xs sm:text-sm md:text-base text-foreground/50 max-w-xl mx-auto mb-8 sm:mb-10">
+            Fundição de ferro (nodular, vermicular e cinzento) e aço carbono
+            com engenharia de precisão em Quintana-SP.
+          </p>
+
+          {/* CTAs */}
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center w-full">
             <Link
               to="/orcamento"
-              className="gradient-molten text-accent-foreground px-6 py-3 sm:px-8 sm:py-4 rounded font-semibold uppercase tracking-wide text-sm sm:text-base md:text-lg hover:opacity-90 transition-all duration-300 glow-molten animate-glow-pulse hover:scale-105 w-full max-w-xs sm:w-auto text-center"
+              className="hero-cta gradient-molten text-accent-foreground px-7 py-3.5 sm:px-8 sm:py-4 rounded-md font-semibold uppercase tracking-wider text-sm hover:opacity-90 transition-all duration-300 glow-molten-sm hover:scale-[1.02] w-full max-w-xs sm:w-auto text-center"
             >
-              Orçamento
+              Solicitar Orçamento
             </Link>
             <Link
               to="/processo"
-              className="glass-dark border border-foreground/30 text-foreground px-6 py-3 sm:px-8 sm:py-4 rounded font-semibold uppercase tracking-wide text-sm sm:text-base md:text-lg hover:border-accent hover:text-accent transition-all duration-300 hover:scale-105 w-full max-w-xs sm:w-auto text-center"
+              className="hero-cta glass-dark text-foreground px-7 py-3.5 sm:px-8 sm:py-4 rounded-md font-semibold uppercase tracking-wider text-sm hover:border-accent/40 hover:text-accent transition-all duration-300 hover:scale-[1.02] w-full max-w-xs sm:w-auto text-center"
             >
-              Nossos Processos
+              Nosso Processo
             </Link>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
 
         {/* Scroll Indicator */}
-        <motion.a
-          initial={{ opacity: 0 }}
-          animate={{ opacity: isLoaded ? 1 : 0 }}
-          transition={{ delay: 1.2, duration: 1 }}
+        <a
           href="#sobre"
-          className="absolute bottom-10 left-1/2 -translate-x-1/2 text-foreground/50 hover:text-accent transition-colors duration-300"
+          className="hero-scroll absolute bottom-8 left-1/2 -translate-x-1/2 text-foreground/30 hover:text-accent transition-colors duration-300"
+          aria-label="Rolar para baixo"
         >
-          <motion.div
-            animate={{ y: [0, 10, 0] }}
-            transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-          >
-            <ArrowDown size={32} />
-          </motion.div>
-        </motion.a>
+          <div className="hero-scroll-arrow">
+            <ArrowDown size={28} />
+          </div>
+        </a>
       </div>
     </section>
   );

@@ -1,8 +1,12 @@
+import { useEffect, useRef } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ShieldCheck, Award, Factory, Gem } from "lucide-react";
-import { useScrollAnimation } from "@/hooks/useScrollAnimation";
+
+gsap.registerPlugin(ScrollTrigger);
 
 const TrustSignals = () => {
-  const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
+  const sectionRef = useRef<HTMLElement>(null);
 
   const signals = [
     { icon: ShieldCheck, text: "Qualidade Comprovada" },
@@ -11,26 +15,47 @@ const TrustSignals = () => {
     { icon: Gem, text: "Acabamento Premium" },
   ];
 
-  return (
-    <section className="py-12 bg-card/30 border-y border-border/40 relative overflow-hidden">
-      {/* Subtle shine effect */}
-      <div className="absolute top-0 bottom-0 w-32 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full animate-[shimmer_5s_infinite]" />
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
 
-      <div className="section-container" ref={ref}>
-        <div
-          className={`grid grid-cols-2 gap-y-6 gap-x-4 md:flex md:flex-wrap md:justify-between md:items-center transition-all duration-1000 ${
-            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-          }`}
-        >
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReduced) return;
+
+    const ctx = gsap.context(() => {
+      gsap.from(el.querySelectorAll(".trust-item"), {
+        opacity: 0,
+        y: 15,
+        stagger: 0.08,
+        duration: 0.5,
+        ease: "power2.out",
+        scrollTrigger: {
+          trigger: el,
+          start: "top 90%",
+          toggleActions: "play none none none",
+        },
+      });
+    });
+
+    return () => ctx.revert();
+  }, []);
+
+  return (
+    <section
+      ref={sectionRef}
+      className="py-10 sm:py-12 bg-card/20 border-y border-border/30 relative overflow-hidden"
+    >
+      <div className="section-container">
+        <div className="grid grid-cols-2 gap-y-6 gap-x-4 md:flex md:flex-wrap md:justify-between md:items-center">
           {signals.map((signal, idx) => (
             <div
               key={idx}
-              className="flex items-center gap-3 text-foreground/70 hover:text-accent transition-colors duration-300 group justify-start md:justify-center"
+              className="trust-item flex items-center gap-3 text-foreground/60 hover:text-accent transition-colors duration-300 group justify-start md:justify-center"
             >
-              <div className="p-2.5 rounded-xl bg-background/50 border border-border/50 group-hover:border-accent/30 group-hover:bg-accent/10 transition-colors shrink-0">
-                <signal.icon className="w-5 h-5" />
+              <div className="p-2.5 rounded-lg bg-background/40 border border-border/40 group-hover:border-accent/25 group-hover:bg-accent/5 transition-all duration-300 shrink-0">
+                <signal.icon className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
-              <span className="font-heading text-xs sm:text-sm font-medium uppercase tracking-wider leading-tight">
+              <span className="font-heading text-[11px] sm:text-xs font-medium uppercase tracking-wider leading-tight">
                 {signal.text}
               </span>
             </div>
