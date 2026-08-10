@@ -1,23 +1,49 @@
+import { useRef, useEffect } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Microscope, TestTube, Scale, ShieldCheck } from "lucide-react";
-import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import analiseImg from "@/assets/process-analise.jpg";
 
+gsap.registerPlugin(ScrollTrigger);
+
 const ProcessQuality = () => {
-  const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      const mm = gsap.matchMedia();
+
+      mm.add("(prefers-reduced-motion: no-preference)", () => {
+        const cells = gsap.utils.toArray(".bento-cell");
+        
+        gsap.fromTo(
+          cells,
+          { opacity: 0, y: 50 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.8,
+            stagger: 0.15,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: sectionRef.current,
+              start: "top 75%",
+            },
+          }
+        );
+      });
+    }, sectionRef);
+
+    return () => ctx.revert();
+  }, []);
 
   return (
-    <section className="py-16 sm:py-24 bg-background relative overflow-hidden border-t border-border/50">
-      <div className="section-container" ref={ref}>
-
+    <section ref={sectionRef} className="py-16 sm:py-24 bg-background relative overflow-hidden border-t border-border/50">
+      <div className="section-container">
         {/* Bento Grid Layout */}
-        <div
-          className={`grid grid-cols-1 lg:grid-cols-3 lg:grid-rows-2 gap-4 sm:gap-5 transition-all duration-700 ${
-            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
-          }`}
-        >
-
+        <div className="grid grid-cols-1 lg:grid-cols-3 lg:grid-rows-2 gap-4 sm:gap-5">
           {/* Cell 1 — Título e texto (col-span-2, row 1) */}
-          <div className="glass-dark edge-glow rounded-2xl p-8 sm:p-10 flex flex-col justify-center lg:col-span-2">
+          <div className="bento-cell glass-dark edge-glow rounded-2xl p-8 sm:p-10 flex flex-col justify-center lg:col-span-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 mb-6 rounded-full border border-accent/30 bg-accent/5 text-[11px] uppercase tracking-[0.2em] text-accent w-fit">
               <ShieldCheck size={13} />
               Controle de Qualidade
@@ -34,11 +60,7 @@ const ProcessQuality = () => {
           </div>
 
           {/* Cell 2 — Imagem de laboratório (col 3, rows 1 e 2) */}
-          <div
-            className={`relative rounded-2xl overflow-hidden lg:row-span-2 min-h-[260px] lg:min-h-0 transition-all duration-700 delay-150 ${
-              isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
-            }`}
-          >
+          <div className="bento-cell relative rounded-2xl overflow-hidden lg:row-span-2 min-h-[260px] lg:min-h-0">
             <img
               src={analiseImg}
               alt="Análise química laboratorial no espectrômetro"
@@ -63,11 +85,7 @@ const ProcessQuality = () => {
           </div>
 
           {/* Cell 3 — Análise Metalográfica (col 1, row 2) */}
-          <div
-            className={`glass-dark edge-glow rounded-2xl p-6 flex gap-4 items-start transition-all duration-700 delay-200 ${
-              isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
-            }`}
-          >
+          <div className="bento-cell glass-dark edge-glow rounded-2xl p-6 flex gap-4 items-start">
             <div className="w-11 h-11 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0 text-accent mt-0.5">
               <Microscope size={20} />
             </div>
@@ -83,11 +101,7 @@ const ProcessQuality = () => {
           </div>
 
           {/* Cell 4 — Espectrometria + Controle Dimensional (col 2, row 2) */}
-          <div
-            className={`flex flex-col gap-4 transition-all duration-700 delay-300 ${
-              isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
-            }`}
-          >
+          <div className="bento-cell flex flex-col gap-4">
             <div className="glass-dark edge-glow rounded-2xl p-6 flex gap-4 items-start flex-1">
               <div className="w-11 h-11 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0 text-accent mt-0.5">
                 <TestTube size={20} />
@@ -117,7 +131,6 @@ const ProcessQuality = () => {
               </div>
             </div>
           </div>
-
         </div>
       </div>
     </section>
