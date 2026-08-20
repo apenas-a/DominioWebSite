@@ -35,12 +35,12 @@ const STAGES = [
     temp: "25 °C",
     material: "Areia Verde Sintética",
     description:
-      "O modelo geométrico conforma uma cavidade côncava perfeita na caixa de areia inferior (drag). A tampa superior (cope) desce e veda o conjunto, alinhando o bocal do canal de descida (sprue).",
+      "A engrenagem modelo conforma uma cavidade côncava perfeita na caixa de areia inferior (drag). A tampa superior (cope) desce e veda o conjunto com acabamento sólido de areia marrom e sprue centralizado.",
     highlights: [
-      "Caixa bipartida com cavidade côncava vazia aguardando o metal",
-      "Compactação automatizada de areia verde de alta densidade",
-      "Tampa superior lisa em material sólido com sprue centralizado",
-      "Pintura refratária para acabamento liso e isento de incrustações",
+      "Engrenagem 3D procedural posicionada na cavidade da base",
+      "Compactação automatizada de areia verde sintética",
+      "Tampa cope sólida marrom sem sobreposição visual de faces",
+      "Bocal de alimentação (sprue) perfeitamente centralizado no topo",
     ],
   },
   {
@@ -52,12 +52,12 @@ const STAGES = [
     temp: "1520 °C",
     material: "Ferro Nodular / Cinzento",
     description:
-      "No forno de indução, o metal ocupa todo o diâmetro do cadinho e é aquecido por bobinas de cobre até 1500°C. Toda a massa metálica transiciona de forma homogênea para uma incandescência brilhante.",
+      "No forno de indução, a massa metálica ocupa todo o diâmetro do cadinho. Aquecida por bobinas de cobre até 1500°C, toda a superfície do caldo incandesce de forma homogênea e uniforme.",
     highlights: [
-      "Fusão por indução eletromagnética de alta frequência",
-      "Preenchimento total do diâmetro interno do cadinho refratário",
-      "Transição uniforme de cor e emissividade em toda a massa",
-      "Efeito Bloom de pós-processamento para incandescência realista",
+      "Malha de metal cobrindo 100% do diâmetro interno do cadinho",
+      "Incandescência uniforme em toda a massa metálica (emissive #ff4400)",
+      "PointLight centralizada abrangendo todo o interior do forno",
+      "Efeito Bloom de pós-processamento para brilho térmico limpo",
     ],
   },
   {
@@ -69,12 +69,12 @@ const STAGES = [
     temp: "1480 °C",
     material: "Inoculação na Concha",
     description:
-      "O forno bascula pelo pivô do bico e descarrega o metal líquido no centro exato da panela de transporte. O nível interno da panela eleva-se progressivamente enquanto o caldo incandesce.",
+      "O forno bascula pelo pivô do bico e descarrega o fluido incandescente no centro exato da abertura da panela. O nível interno da panela eleva-se progressivamente enquanto o caldo incandesce.",
     highlights: [
-      "Pivô de rotação do forno alinhado perfeitamente no bico",
-      "Deslocamento da panela diretamente sob o ponto de recepção",
+      "Centro da panela posicionado na projeção vertical do bico do forno",
+      "Fluxo incandescente caindo no centro exato da abertura superior",
       "Elevação dinâmica do nível interno de metal na panela (scale.y)",
-      "Inoculantes para nodularização e grafitização ideal",
+      "Inoculação direta para refino de grãos e nodularização",
     ],
   },
   {
@@ -86,12 +86,12 @@ const STAGES = [
     temp: "1420 °C",
     material: "Preenchimento Estanque",
     description:
-      "A panela cheia desloca-se até posicionar seu bico exatamente sobre o canal de alimentação do molde. Basculando pelo bico, vaza o metal no orifício e a peça dentro da cavidade aquece e acende.",
+      "A panela cheia desloca-se alinhando seu bico sobre o canal de alimentação do molde. Basculando pelo bico, vaza o fluido no sprue e a engrenagem dentro da cavidade aquece e incandesce.",
     highlights: [
-      "Pivô da panela posicionado no bico para pontaria precisa no sprue",
-      "Fluxo incandescente de GLSL shader caindo no centro do canal",
+      "Bico da panela alinhado exatamente sobre o sprue do molde",
+      "Fluxo incandescente GLSL caindo no centro do canal de alimentação",
       "Respingos e faíscas incandescentes no impacto com a areia",
-      "Aquecimento incandescente da peça fundida dentro da cavidade",
+      "Aquecimento incandescente da engrenagem 3D dentro do molde",
     ],
   },
   {
@@ -103,10 +103,10 @@ const STAGES = [
     temp: "25 °C / Amb.",
     material: "Peça Metálica Estrutural",
     description:
-      "Após a solidificação da liga, a tampa do molde abre-se novamente. A peça transiciona de laranja incandescente para cinza metálico escuro, pronta para desmoldagem vibratória e usinagem.",
+      "Após a solidificação da liga, a tampa do molde abre-se novamente. A engrenagem transiciona de laranja incandescente para cinza metálico escuro, pronta para desmoldagem vibratória e usinagem.",
     highlights: [
-      "Desmoldagem com separação vibratória da areia",
-      "Transição térmica progressiva de incandescente para cinza metálico",
+      "Desmoldagem vibratória revelando a engrenagem pronta",
+      "Transição térmica progressiva de incandescente para metálico",
       "Corte dos canais de alimentação e rebarbação final",
       "Inspeção dimensional e espectrométrica 100% aprovada",
     ],
@@ -118,13 +118,13 @@ const STAGES = [
 // ============================================================================
 
 /**
- * 1. O Molde (Caixa de Areia Bipartida com Cavidade Côncava na Base)
+ * 1. O Molde (Caixa de Areia Bipartida com Cavidade Côncava e Engrenagem Procedural)
  */
 function createMold() {
   const moldGroup = new THREE.Group();
 
   const sandMat = new THREE.MeshStandardMaterial({
-    color: 0x4a4035,
+    color: 0x5c4d3e, // Rich clean sand brown
     roughness: 0.95,
     metalness: 0.05,
   });
@@ -150,73 +150,89 @@ function createMold() {
   dragGroup.add(dragFloor);
 
   // Sand Cavity Walls forming a concave 1.8x1.8 center cavity
-  const wallMat = sandMat;
-  const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.45, 3.6), wallMat);
+  const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.45, 3.6), sandMat);
   leftWall.position.set(-1.35, 0.7, 0);
   dragGroup.add(leftWall);
 
-  const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.45, 3.6), wallMat);
+  const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.45, 3.6), sandMat);
   rightWall.position.set(1.35, 0.7, 0);
   dragGroup.add(rightWall);
 
-  const frontWall = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.45, 0.9), wallMat);
+  const frontWall = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.45, 0.9), sandMat);
   frontWall.position.set(0, 0.7, 1.35);
   dragGroup.add(frontWall);
 
-  const backWall = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.45, 0.9), wallMat);
+  const backWall = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.45, 0.9), sandMat);
   backWall.position.set(0, 0.7, -1.35);
   dragGroup.add(backWall);
 
-  // Tampa / Superior (Cope) - Solid, smooth sand material, moves in Y
+  // Tampa / Superior (Cope) - Solid 100% sand brown MeshStandardMaterial on ALL faces
   const moldTop = new THREE.Group();
   moldTop.position.y = 2.8; // Starts open in Stage 1
   moldGroup.add(moldTop);
 
-  const copeSand = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.9, 3.6), sandMat);
-  copeSand.position.y = 0.45;
+  // Clean cope sand block (no overlapping geometry on top face)
+  const copeSand = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.85, 3.6), sandMat);
+  copeSand.position.y = 0.425;
   moldTop.add(copeSand);
 
-  const copeFrame = new THREE.Mesh(new THREE.BoxGeometry(3.7, 0.18, 3.7), frameMat);
-  copeFrame.position.y = 0.81;
-  moldTop.add(copeFrame);
+  // Side-only steel frame around perimeter (open top so sand material stays 100% visible on top face)
+  const sideFrameMat = frameMat;
+  const fLeft = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.85, 3.7), sideFrameMat);
+  fLeft.position.set(-1.81, 0.425, 0);
+  moldTop.add(fLeft);
 
-  // Sprue funnel cup (canal de alimentação) on top of upper mold (centralized)
-  const sprueFunnel = new THREE.Mesh(new THREE.ConeGeometry(0.45, 0.6, 24), sandMat);
+  const fRight = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.85, 3.7), sideFrameMat);
+  fRight.position.set(1.81, 0.425, 0);
+  moldTop.add(fRight);
+
+  const fFront = new THREE.Mesh(new THREE.BoxGeometry(3.7, 0.85, 0.08), sideFrameMat);
+  fFront.position.set(0, 0.425, 1.81);
+  moldTop.add(fFront);
+
+  const fBack = new THREE.Mesh(new THREE.BoxGeometry(3.7, 0.85, 0.08), sideFrameMat);
+  fBack.position.set(0, 0.425, -1.81);
+  moldTop.add(fBack);
+
+  // Sprue funnel cup (canal de alimentação) on top face at (0, 0.85, 0)
+  const sprueFunnel = new THREE.Mesh(new THREE.ConeGeometry(0.42, 0.55, 24), sandMat);
   sprueFunnel.rotation.x = Math.PI;
-  sprueFunnel.position.set(0, 1.2, 0);
+  sprueFunnel.position.set(0, 1.125, 0);
   moldTop.add(sprueFunnel);
 
   const sprueLip = new THREE.Mesh(
-    new THREE.TorusGeometry(0.46, 0.05, 12, 24),
+    new THREE.TorusGeometry(0.43, 0.04, 12, 24),
     frameMat
   );
   sprueLip.rotation.x = Math.PI / 2;
-  sprueLip.position.set(0, 1.5, 0);
+  sprueLip.position.set(0, 1.4, 0);
   moldTop.add(sprueLip);
 
-  // Inside Cast Piece (Industrial Gear/Flange) inside the concave cavity
+  // Engrenagem 3D Procedural no Interior da Cavidade
   const pieceMat = new THREE.MeshStandardMaterial({
-    color: 0x2a2e38,
+    color: 0x3a404d, // Metallic industrial gray
     emissive: 0x000000,
     emissiveIntensity: 0,
-    roughness: 0.35,
-    metalness: 0.9,
+    roughness: 0.4,
+    metalness: 0.85,
   });
 
   const pieceGroup = new THREE.Group();
-  pieceGroup.position.set(0, 0.7, 0);
+  pieceGroup.position.set(0, 0.65, 0);
   moldGroup.add(pieceGroup);
 
-  const pieceHub = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.1, 0.35, 32), pieceMat);
+  // Cilindro central com furo
+  const pieceHub = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.0, 0.35, 32), pieceMat);
   pieceGroup.add(pieceHub);
 
-  const pieceHole = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.38, 20), frameMat);
+  const pieceHole = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.38, 24), frameMat);
   pieceGroup.add(pieceHole);
 
+  // 8 Dentes distribuídos radialmente
   for (let g = 0; g < 8; g++) {
     const angle = (g / 8) * Math.PI * 2;
-    const tooth = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.35, 0.3), pieceMat);
-    tooth.position.set(Math.cos(angle) * 1.3, 0, Math.sin(angle) * 1.3);
+    const tooth = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.35, 0.32), pieceMat);
+    tooth.position.set(Math.cos(angle) * 1.2, 0, Math.sin(angle) * 1.2);
     tooth.rotation.y = -angle;
     pieceGroup.add(tooth);
   }
@@ -225,7 +241,7 @@ function createMold() {
 }
 
 /**
- * 2. O Forno de Indução
+ * 2. O Forno de Indução (Com Aquecimento Uniforme em Todo o Cadinho)
  * PIVÔ DA ROTAÇÃO: Posicionado no bico de despejo (top spout lip at 0,0,0)
  */
 function createFurnace() {
@@ -265,14 +281,14 @@ function createFurnace() {
     furnaceBody.add(coil);
   }
 
-  // Cadinho Interno (Parede Refratária oca)
+  // Cadinho Interno (Parede Refratária oca com diâmetro interno 1.25)
   const refractoryLining = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.28, 1.28, 2.42, 32, 1, true),
+    new THREE.CylinderGeometry(1.25, 1.25, 2.42, 32, 1, true),
     new THREE.MeshStandardMaterial({ color: 0x424652, roughness: 0.9, metalness: 0.1 })
   );
   furnaceBody.add(refractoryLining);
 
-  // Metal Interno - Disco que PREENCHE COMPLETAMENTE o diâmetro interno do cadinho (1.27)
+  // Metal Interno - Disco que PREENCHE COMPLETAMENTE O DIÂMETRO INTERNO DO CADINHO (1.24)
   const furnaceMeltMat = new THREE.MeshStandardMaterial({
     color: 0x181a20,
     emissive: 0x000000,
@@ -280,28 +296,28 @@ function createFurnace() {
     roughness: 0.1,
   });
 
-  const furnaceMelt = new THREE.Mesh(new THREE.CylinderGeometry(1.27, 1.27, 0.15, 32), furnaceMeltMat);
+  const furnaceMelt = new THREE.Mesh(new THREE.CylinderGeometry(1.24, 1.24, 0.15, 32), furnaceMeltMat);
   furnaceMelt.position.y = 1.0;
   furnaceBody.add(furnaceMelt);
 
-  // PointLight interno vinculado ao metal líquido
-  const furnaceLight = new THREE.PointLight(0xff5500, 0, 12);
-  furnaceLight.position.set(-0.5, 0.2, 0);
-  furnacePivot.add(furnaceLight);
+  // PointLight interno no CENTRO EXATO do interior do forno (abrangendo toda a superfície)
+  const furnaceLight = new THREE.PointLight(0xff4400, 0, 12.0);
+  furnaceLight.position.set(0, 1.0, 0); // Positioned in center of crucible top
+  furnaceBody.add(furnaceLight);
 
   return { furnacePivot, furnaceMeltMat, furnaceLight };
 }
 
 /**
  * 3. A Panela de Fundição (Ladle)
- * PIVÔ DA ROTAÇÃO: Posicionado no bico de despejo da panela (spout lip at 0,0,0)
+ * PIVÔ DA ROTAÇÃO: Posicionado no centro da abertura superior da panela (0,0,0)
  */
 function createLadle() {
-  const ladlePivot = new THREE.Group(); // Pivot at ladle spout lip (0,0,0)
+  const ladlePivot = new THREE.Group(); // Pivot at top opening center (0, 0, 0)
 
   const ladleBody = new THREE.Group();
-  // Offset body so spout top rim aligns with pivot at (0,0,0) and opening center is at local (-0.7, -0.65, 0)
-  ladleBody.position.set(-0.7, -0.65, 0);
+  // Bucket center is at (0, -0.65, 0) so opening center is at local (0, 0, 0) of ladlePivot!
+  ladleBody.position.set(0, -0.65, 0);
   ladlePivot.add(ladleBody);
 
   // Bucket - CylinderGeometry levemente cônico (radiusTop > radiusBottom)
@@ -311,7 +327,7 @@ function createLadle() {
   );
   ladleBody.add(bucket);
 
-  // Spout lip at top edge (0.7, 0.65, 0) relative to ladleBody center -> aligns at (0, 0, 0) of ladlePivot!
+  // Spout lip extending to local (+0.7, +0.65, 0) relative to ladleBody center
   const ladleSpout = new THREE.Mesh(
     new THREE.BoxGeometry(0.4, 0.18, 0.4),
     new THREE.MeshStandardMaterial({ color: 0x303644, roughness: 0.4, metalness: 0.85 })
@@ -353,8 +369,8 @@ function createLadle() {
   ladleMelt.scale.set(1, 0, 1); // Initially empty (scale.y = 0)
   ladleBody.add(ladleMelt);
 
-  // PointLight interno da panela
-  const ladleLight = new THREE.PointLight(0xff5500, 0, 10);
+  // PointLight interno da panela em seu centro
+  const ladleLight = new THREE.PointLight(0xff4400, 0, 10);
   ladleLight.position.set(0, 0.2, 0);
   ladlePivot.add(ladleLight);
 
@@ -374,7 +390,7 @@ function createLiquidFlow(height: number) {
       uTime: { value: 0 },
       uColorCore: { value: new THREE.Color("#ffffff") },
       uColorHot: { value: new THREE.Color("#ffaa00") },
-      uColorMolten: { value: new THREE.Color("#ff3300") },
+      uColorMolten: { value: new THREE.Color("#ff4400") },
     },
     vertexShader: `
       varying vec2 vUv;
@@ -506,7 +522,7 @@ const Process = () => {
     scene.background = new THREE.Color("#0f0f11");
     scene.fog = new THREE.FogExp2("#0f0f11", 0.015); // Light fog for open visual clarity
 
-    // Open isometric camera angle (camera position adjusted to 0, 6, 15 as requested)
+    // Open isometric camera angle (camera position set to 0, 6, 15)
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
     camera.position.set(0, 6, 15);
     const cameraTarget = new THREE.Vector3(0, 0.8, 0);
@@ -575,7 +591,7 @@ const Process = () => {
     // 3. INSTANTIATE MODULAR 3D MODELS
     // ----------------------------------------------------
 
-    // 1. Mold (Caixa de Areia Bipartida com Cavidade Côncava)
+    // 1. Mold (Caixa de Areia Bipartida com Cavidade Côncava e Engrenagem 3D)
     const { moldGroup, moldTop, pieceGroup, pieceMat } = createMold();
     moldGroup.position.set(0, -0.5, 0); // Stage 1 starts centered
     scene.add(moldGroup);
@@ -585,7 +601,7 @@ const Process = () => {
     furnacePivot.position.set(22, 2.5, 0); // Initially far right out of scene
     scene.add(furnacePivot);
 
-    // 3. Ladle (Panela de Fundição)
+    // 3. Ladle (Panela de Fundição com Pivô na Abertura Superior)
     const { ladlePivot, ladleMelt, ladleMeltMat, ladleLight } = createLadle();
     ladlePivot.position.set(22, 0, 0); // Initially far right out of scene
     scene.add(ladlePivot);
@@ -641,7 +657,7 @@ const Process = () => {
 
       // ====================================================
       // FASE 1: MOLDAGEM (Scroll 0% a 20%)
-      // Mold centered at (0, -0.5, 0). Concave cavity is empty.
+      // Mold centered at (0, -0.5, 0). Gear sitting inside drag cavity.
       // ====================================================
       masterTimeline
         // Mold upper cope closes onto drag base
@@ -661,10 +677,10 @@ const Process = () => {
 
       // ====================================================
       // FASE 2: FUSÃO NO FORNO (Scroll 25% a 45%)
-      // Furnace centered at (0, 2.5, 0). Molten disk fills full diameter (1.27)
+      // Furnace centered at (0, 2.5, 0). Molten disk fills full diameter (1.24) uniformly
       // ====================================================
       masterTimeline
-        // Metal inside furnace liquefies & glows incandescent (0xffffff / emissive 0xff5500) UNIFORMLY across full mesh
+        // Metal inside furnace liquefies & glows incandescent (#ff4400) UNIFORMLY across 100% of top surface
         .to(
           furnaceMeltMat.color,
           { r: 1.0, g: 1.0, b: 1.0, duration: 0.18, ease: "power1.in" },
@@ -672,10 +688,10 @@ const Process = () => {
         )
         .to(
           furnaceMeltMat.emissive,
-          { r: 1.0, g: 0.33, b: 0.0, duration: 0.18, ease: "power1.in" },
+          { r: 1.0, g: 0.27, b: 0.0, duration: 0.18, ease: "power1.in" },
           0.25
         )
-        .to(furnaceMeltMat, { emissiveIntensity: 5.0, duration: 0.18 }, 0.25)
+        .to(furnaceMeltMat, { emissiveIntensity: 2.5, duration: 0.18 }, 0.25)
         .to(furnaceLight, { intensity: 8.0, duration: 0.18 }, 0.25);
 
       // ====================================================
@@ -690,7 +706,7 @@ const Process = () => {
         .to(cameraTarget, { x: -2.2, y: 1.0, z: 0, duration: 0.05 }, 0.45)
         // Furnace tilts around spout pivot
         .to(furnacePivot.rotation, { z: -0.65, duration: 0.15, ease: "power2.inOut" }, 0.5)
-        // Fluid Shader Stream 1 expands downwards into ladle
+        // Fluid Shader Stream 1 expands downwards into ladle center
         .to(stream1.scale, { x: 1, y: 1, z: 1, duration: 0.08, ease: "power1.in" }, 0.52)
         // Internal liquid level inside ladle fills up (scale.y: 0 -> 1) & glows incandescent
         .to(ladleMelt.scale, { y: 1.0, duration: 0.14, ease: "power1.inOut" }, 0.52)
@@ -701,10 +717,10 @@ const Process = () => {
         )
         .to(
           ladleMeltMat.emissive,
-          { r: 1.0, g: 0.33, b: 0.0, duration: 0.12, ease: "power2.in" },
+          { r: 1.0, g: 0.27, b: 0.0, duration: 0.12, ease: "power2.in" },
           0.54
         )
-        .to(ladleMeltMat, { emissiveIntensity: 5.0, duration: 0.12 }, 0.54)
+        .to(ladleMeltMat, { emissiveIntensity: 2.5, duration: 0.12 }, 0.54)
         .to(ladleLight, { intensity: 6.0, duration: 0.12 }, 0.54)
         // End of stream 1 & furnace un-tilts
         .to(stream1.scale, { x: 0, y: 0, z: 0, duration: 0.05 }, 0.66)
@@ -718,17 +734,17 @@ const Process = () => {
       masterTimeline
         .to(furnacePivot.position, { x: -18, duration: 0.03 }, 0.7)
         .to(moldGroup.position, { x: 0, y: -0.5, z: 0, duration: 0.03, ease: "power2.out" }, 0.7)
-        .to(ladlePivot.position, { x: 0, y: 3.0, z: 0, duration: 0.03, ease: "power2.out" }, 0.7)
+        .to(ladlePivot.position, { x: -0.7, y: 3.0, z: 0, duration: 0.03, ease: "power2.out" }, 0.7)
         .to(sparkMesh.position, { x: 0, y: 1.5, z: 0, duration: 0.03 }, 0.7)
         .to(camera.position, { x: 0, y: 6.0, z: 14, duration: 0.03 }, 0.7)
         .to(cameraTarget, { x: 0, y: 0.8, z: 0, duration: 0.03 }, 0.7)
-        // Ladle tilts to pour into mold sprue funnel
+        // Ladle tilts to pour from its spout into mold sprue funnel
         .to(ladlePivot.rotation, { z: -0.65, duration: 0.1, ease: "power2.inOut" }, 0.73)
         // Fluid Shader Stream 2 expands into sprue
         .to(stream2.scale, { x: 1, y: 1, z: 1, duration: 0.06 }, 0.74)
         // Spark splash particles activate at mold sprue
         .to(sparkMat, { opacity: 0.95, duration: 0.06 }, 0.75)
-        // Internal cast piece in mold heats up incandescent (0xffffff / emissive 0xff5500)
+        // Internal 3D gear in mold heats up incandescent (0xffffff / emissive #ff4400)
         .to(
           pieceMat.color,
           { r: 1.0, g: 1.0, b: 1.0, duration: 0.1, ease: "power1.in" },
@@ -736,10 +752,10 @@ const Process = () => {
         )
         .to(
           pieceMat.emissive,
-          { r: 1.0, g: 0.33, b: 0.0, duration: 0.1, ease: "power1.in" },
+          { r: 1.0, g: 0.27, b: 0.0, duration: 0.1, ease: "power1.in" },
           0.76
         )
-        .to(pieceMat, { emissiveIntensity: 5.0, duration: 0.1 }, 0.76)
+        .to(pieceMat, { emissiveIntensity: 2.5, duration: 0.1 }, 0.76)
         // Ladle empties (scale.y: 1 -> 0.2) as it pours
         .to(ladleMelt.scale, { y: 0.2, duration: 0.12, ease: "power1.out" }, 0.75)
         // Stream 2 ends, sparks fade, ladle un-tilts & exits right
@@ -750,7 +766,7 @@ const Process = () => {
 
       // ====================================================
       // FASE 5: DESMOLDAGEM E PEÇA FINAL (Scroll 90% a 100%)
-      // Mold upper cope opens, piece cools to polished graphite steel
+      // Mold upper cope opens, 3D gear cools to polished graphite steel
       // ====================================================
       masterTimeline
         .to(moldTop.position, { y: 2.8, duration: 0.08, ease: "power2.out" }, 0.9)
@@ -805,7 +821,7 @@ const Process = () => {
       if (stream1Mat) stream1Mat.uniforms.uTime.value += delta;
       if (stream2Mat) stream2Mat.uniforms.uTime.value += delta;
 
-      // Rotate final piece in Stage 5
+      // Rotate final gear piece in Stage 5
       if (pieceGroup) {
         pieceGroup.rotation.y += delta * 0.35;
       }
