@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { isMobileDevice } from "@/hooks/useThreeScene";
 
 interface Process3DCanvasProps {
-  currentStep: number; // 0: Moldagem, 1: Fusão, 2: Análise, 3: Vazamento, 4: Acabamento
+  currentStep: number; // 0: Matéria-Prima, 1: Fusão, 2: Moldagem, 3: Vazamento, 4: Resfriamento, 5: Acabamento, 6: Inspeção
 }
 
 const Process3DCanvas = ({ currentStep }: Process3DCanvasProps) => {
@@ -80,7 +80,7 @@ const Process3DCanvas = ({ currentStep }: Process3DCanvasProps) => {
       mainGroup.add(toothMesh);
     }
 
-    // Wireframe inspect overlay for Análise step
+    // Wireframe inspect overlay for Inspeção step
     const wireGeom = new THREE.WireframeGeometry(outerGeom);
     const wireMat = new THREE.LineBasicMaterial({
       color: 0x00f0ff,
@@ -92,14 +92,14 @@ const Process3DCanvas = ({ currentStep }: Process3DCanvasProps) => {
     mainGroup.add(wireframe);
 
     // Lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
 
     const dirLight1 = new THREE.DirectionalLight(0xffffff, 1.2);
     dirLight1.position.set(5, 10, 7);
     scene.add(dirLight1);
 
-    const dirLight2 = new THREE.DirectionalLight(0xff781e, 0.5);
+    const dirLight2 = new THREE.DirectionalLight(0xff781e, 0.6);
     dirLight2.position.set(-5, -2, -5);
     scene.add(dirLight2);
 
@@ -109,39 +109,39 @@ const Process3DCanvas = ({ currentStep }: Process3DCanvasProps) => {
     pointLightRef.current = pointLight;
     scene.add(pointLight);
 
-    // Resize listener
-    const handleResize = () => {
+    // ResizeObserver for reliable container resizing
+    const resizeObserver = new ResizeObserver(() => {
       if (!container) return;
       const w = container.clientWidth || 400;
       const h = container.clientHeight || 400;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
-    };
+    });
+    resizeObserver.observe(container);
 
-    window.addEventListener("resize", handleResize);
-
-    // Animation Loop
+    // Animation Loop using performance.now() to avoid THREE.Clock deprecation
     let animId: number;
-    const clock = new THREE.Clock();
+    let previousTime = performance.now();
 
-    const animate = () => {
+    const animate = (currentTime: number) => {
       animId = requestAnimationFrame(animate);
-      const delta = clock.getDelta();
+      const delta = (currentTime - previousTime) / 1000;
+      previousTime = currentTime;
 
       if (mainGroup) {
         mainGroup.rotation.y += delta * 0.5;
-        mainGroup.rotation.x = Math.sin(clock.getElapsedTime() * 0.5) * 0.1;
+        mainGroup.rotation.x = Math.sin(currentTime * 0.0008) * 0.1;
       }
 
       renderer.render(scene, camera);
     };
 
-    animate();
+    animId = requestAnimationFrame(animate);
 
     return () => {
       cancelAnimationFrame(animId);
-      window.removeEventListener("resize", handleResize);
+      resizeObserver.disconnect();
 
       outerGeom.dispose();
       innerGeom.dispose();
@@ -157,73 +157,94 @@ const Process3DCanvas = ({ currentStep }: Process3DCanvasProps) => {
     };
   }, []);
 
-  // Smoothly react to step changes (0 to 4)
+  // Smoothly react to step changes (0 to 6)
   useEffect(() => {
     const mat = materialRef.current;
     const wire = wireframeRef.current;
     const light = pointLightRef.current;
     if (!mat || !wire || !light) return;
 
-    // Step 0: Moldagem (sand mold feel, rough)
+    // Step 0: Matéria-Prima (raw metallic scrap, dark industrial tone)
     if (currentStep === 0) {
-      mat.color.set("#7c7062");
-      mat.roughness = 0.85;
-      mat.metalness = 0.2;
+      mat.color.set("#3a3f47");
+      mat.roughness = 0.7;
+      mat.metalness = 0.4;
       mat.emissive.set("#000000");
       mat.emissiveIntensity = 0;
       (wire.material as THREE.LineBasicMaterial).opacity = 0;
       light.intensity = 0;
     }
-    // Step 1: Fusão (molten incandescent metal)
+    // Step 1: Fusão (molten incandescent glowing furnace metal)
     else if (currentStep === 1) {
-      mat.color.set("#ff4500");
+      mat.color.set("#ff3300");
       mat.roughness = 0.2;
       mat.metalness = 0.5;
-      mat.emissive.set("#ff5500");
-      mat.emissiveIntensity = 1.2;
+      mat.emissive.set("#ff4500");
+      mat.emissiveIntensity = 1.4;
       (wire.material as THREE.LineBasicMaterial).opacity = 0;
-      light.intensity = 3;
+      light.intensity = 3.5;
       light.color.set("#ff5500");
     }
-    // Step 2: Análise (wireframe inspection mode)
+    // Step 2: Moldagem (sand mold feel, organic rough finish)
     else if (currentStep === 2) {
-      mat.color.set("#1f2937");
-      mat.roughness = 0.4;
-      mat.metalness = 0.9;
-      mat.emissive.set("#002b36");
-      mat.emissiveIntensity = 0.3;
-      (wire.material as THREE.LineBasicMaterial).opacity = 0.8;
-      (wire.material as THREE.LineBasicMaterial).color.set("#00f0ff");
-      light.intensity = 1;
-      light.color.set("#00f0ff");
+      mat.color.set("#7c7062");
+      mat.roughness = 0.85;
+      mat.metalness = 0.15;
+      mat.emissive.set("#000000");
+      mat.emissiveIntensity = 0;
+      (wire.material as THREE.LineBasicMaterial).opacity = 0;
+      light.intensity = 0;
     }
-    // Step 3: Vazamento (liquid glowing metal filling)
+    // Step 3: Vazamento (liquid glowing orange metal filling mold)
     else if (currentStep === 3) {
       mat.color.set("#ff8c00");
       mat.roughness = 0.15;
       mat.metalness = 0.7;
-      mat.emissive.set("#ff3300");
-      mat.emissiveIntensity = 0.8;
+      mat.emissive.set("#ff2200");
+      mat.emissiveIntensity = 1.0;
       (wire.material as THREE.LineBasicMaterial).opacity = 0;
-      light.intensity = 2;
-      light.color.set("#ff781e");
+      light.intensity = 2.5;
+      light.color.set("#ff6600");
     }
-    // Step 4: Acabamento (final polished metal piece)
+    // Step 4: Resfriamento (cooling metal, darkening core, subtle ember glow)
     else if (currentStep === 4) {
-      mat.color.set("#8a95a5");
-      mat.roughness = 0.25;
-      mat.metalness = 0.95;
+      mat.color.set("#524038");
+      mat.roughness = 0.6;
+      mat.metalness = 0.6;
+      mat.emissive.set("#ff1100");
+      mat.emissiveIntensity = 0.25;
+      (wire.material as THREE.LineBasicMaterial).opacity = 0;
+      light.intensity = 0.5;
+      light.color.set("#ff3300");
+    }
+    // Step 5: Acabamento (shot blasted, clean machined metal)
+    else if (currentStep === 5) {
+      mat.color.set("#7a8595");
+      mat.roughness = 0.3;
+      mat.metalness = 0.9;
       mat.emissive.set("#000000");
       mat.emissiveIntensity = 0;
       (wire.material as THREE.LineBasicMaterial).opacity = 0;
       light.intensity = 0;
+    }
+    // Step 6: Inspeção & Qualidade (cyan high-precision laser scan wireframe)
+    else if (currentStep === 6) {
+      mat.color.set("#1e293b");
+      mat.roughness = 0.35;
+      mat.metalness = 0.95;
+      mat.emissive.set("#002b36");
+      mat.emissiveIntensity = 0.4;
+      (wire.material as THREE.LineBasicMaterial).opacity = 0.95;
+      (wire.material as THREE.LineBasicMaterial).color.set("#00f0ff");
+      light.intensity = 1.5;
+      light.color.set("#00f0ff");
     }
   }, [currentStep]);
 
   return (
     <div
       ref={containerRef}
-      className="w-full h-full min-h-[300px] flex items-center justify-center pointer-events-none"
+      className="w-full h-full min-h-[320px] flex items-center justify-center pointer-events-none"
     />
   );
 };

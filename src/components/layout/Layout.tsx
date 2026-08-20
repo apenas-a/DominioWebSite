@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, ReactNode } from "react";
 import Header from "./Header";
 import Footer from "./Footer";
 import PageTransition from "@/components/PageTransition";
@@ -7,7 +7,11 @@ import { useLenisInit, getLenis } from "@/hooks/useLenis";
 import { useLocation, Outlet } from "react-router-dom";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-const Layout = () => {
+interface LayoutProps {
+  children?: ReactNode;
+}
+
+const Layout = ({ children }: LayoutProps) => {
   useLenisInit();
   const location = useLocation();
 
@@ -41,7 +45,7 @@ const Layout = () => {
       <Header />
       <main className="flex-1 pb-20 md:pb-0">
         <PageTransition>
-          <Outlet />
+          {children ?? <Outlet />}
         </PageTransition>
       </main>
       <Footer />
