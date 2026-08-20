@@ -1,5 +1,4 @@
 import { useRef, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import * as THREE from "three";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -13,12 +12,13 @@ import {
   Droplets,
   Wrench,
   Sparkles,
-  ArrowRight,
   ChevronDown,
   Layers,
   Thermometer,
   ShieldCheck,
   CheckCircle2,
+  Activity,
+  FileCheck,
 } from "lucide-react";
 import { isMobileDevice } from "@/hooks/useThreeScene";
 
@@ -97,18 +97,18 @@ const STAGES = [
   {
     id: 5,
     number: "05",
-    tag: "05. Solidificação e Desmoldagem",
-    title: "Resfriamento e Revelação da Peça Acabada",
+    tag: "05. Controle de Qualidade",
+    title: "Espectrometria SPECTROMAXx em Tempo Real",
     icon: Sparkles,
     temp: "25 °C / Amb.",
-    material: "Peça Metálica Estrutural",
+    material: "Certificação Espectrométrica",
     description:
-      "Após a solidificação da liga, a tampa do molde abre-se novamente. A engrenagem transiciona de laranja incandescente para cinza metálico escuro, pronta para desmoldagem vibratória e usinagem.",
+      "Na bancada de ensaio 3D com o espectrômetro SPECTROMAXx, a amostra sofre um disparo de centelha azul elétrica. Os picos de leitura espectrométrica oscilam ao vivo no monitor, certificando 100% da liga.",
     highlights: [
-      "Desmoldagem vibratória revelando a engrenagem pronta",
-      "Transição térmica progressiva de incandescente para metálico",
-      "Corte dos canais de alimentação e rebarbação final",
-      "Inspeção dimensional e espectrométrica 100% aprovada",
+      "Estação laboratorial 3D com espectrômetro SPECTROMAXx",
+      "Arco de centelha azul elétrico (#00d4ff) durante o ensaio",
+      "Gráfico de picos espectrométricos animado em tempo real via Canvas 2D",
+      "Aprovação imediata de composição química (Fe, C, Si, Mn, Cr)",
     ],
   },
 ];
@@ -496,6 +496,302 @@ function createSparkSplashSystem() {
   return { sparkMesh, sparkGeo, sparkMat, sparkVelocities, count };
 }
 
+/**
+ * 6. Estação de Controle de Qualidade / Espectrometria (SPECTROMAXx 3D Lab)
+ */
+function createLabStation() {
+  const labGroup = new THREE.Group();
+
+  // ----- 1. MESA / BANCADA LABORATORIAL -----
+  const benchGroup = new THREE.Group();
+  labGroup.add(benchGroup);
+
+  // Bench top slab (Granite / Melamine)
+  const benchTop = new THREE.Mesh(
+    new THREE.BoxGeometry(6.2, 0.2, 3.4),
+    new THREE.MeshStandardMaterial({ color: 0xe5e7eb, roughness: 0.3, metalness: 0.1 })
+  );
+  benchTop.position.y = 1.0;
+  benchGroup.add(benchTop);
+
+  // Cabinet Base (Dark Gray Slate)
+  const cabinetBase = new THREE.Mesh(
+    new THREE.BoxGeometry(6.1, 1.8, 3.2),
+    new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.6, metalness: 0.2 })
+  );
+  cabinetBase.position.y = 0.0;
+  benchGroup.add(cabinetBase);
+
+  // Cabinet doors accent lines
+  const doorTrim = new THREE.Mesh(
+    new THREE.BoxGeometry(6.12, 0.04, 3.22),
+    new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.3, metalness: 0.7 })
+  );
+  doorTrim.position.y = 0.0;
+  benchGroup.add(doorTrim);
+
+  // ----- 2. ESPECTRÔMETRO SPECTROMAXx (Direita) -----
+  const specGroup = new THREE.Group();
+  specGroup.position.set(1.1, 1.1, 0.2);
+  labGroup.add(specGroup);
+
+  // Lower Dark Base Body
+  const specBase = new THREE.Mesh(
+    new THREE.BoxGeometry(2.8, 0.65, 2.3),
+    new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4, metalness: 0.6 })
+  );
+  specBase.position.y = 0.325;
+  specGroup.add(specBase);
+
+  // Upper Light Aluminum Body
+  const specTop = new THREE.Mesh(
+    new THREE.BoxGeometry(2.8, 0.75, 2.3),
+    new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.3, metalness: 0.75 })
+  );
+  specTop.position.y = 1.025;
+  specGroup.add(specTop);
+
+  // Front-Left Spark Chamber Alcove (Cutout)
+  const chamberCutout = new THREE.Mesh(
+    new THREE.BoxGeometry(0.8, 0.65, 0.8),
+    new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9, metalness: 0.1 })
+  );
+  chamberCutout.position.set(-0.9, 0.8, 0.7);
+  specGroup.add(chamberCutout);
+
+  // Sample Specimen Stage inside chamber
+  const sampleStage = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.22, 0.22, 0.18, 24),
+    new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.9, roughness: 0.3 })
+  );
+  sampleStage.position.set(-0.9, 0.57, 0.7);
+  specGroup.add(sampleStage);
+
+  // Metal Sample Button (Disc)
+  const metalSample = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.14, 0.14, 0.05, 20),
+    new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.95, roughness: 0.2 })
+  );
+  metalSample.position.set(-0.9, 0.685, 0.7);
+  specGroup.add(metalSample);
+
+  // Spark Electrode Probe Pin
+  const electrodePin = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.03, 0.01, 0.28, 16),
+    new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.9, roughness: 0.2 })
+  );
+  electrodePin.position.set(-0.9, 0.95, 0.7);
+  specGroup.add(electrodePin);
+
+  // Electric Spark Arc Beam
+  const sparkArcMat = new THREE.MeshStandardMaterial({
+    color: 0x00d4ff,
+    emissive: 0x00d4ff,
+    emissiveIntensity: 5.0,
+    roughness: 0.1,
+  });
+  const sparkArc = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.02, 0.04, 0.2, 12),
+    sparkArcMat
+  );
+  sparkArc.position.set(-0.9, 0.79, 0.7);
+  specGroup.add(sparkArc);
+
+  // Blue Spark PointLight
+  const sparkLight = new THREE.PointLight(0x00d4ff, 0, 5.0);
+  sparkLight.position.set(-0.9, 0.8, 0.7);
+  specGroup.add(sparkLight);
+
+  // Spectrometer Side Vent Grilles
+  for (let v = 0; v < 4; v++) {
+    const vent = new THREE.Mesh(
+      new THREE.BoxGeometry(0.04, 0.08, 0.6),
+      new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8 })
+    );
+    vent.position.set(1.41, 0.35 + v * 0.12, 0.2);
+    specGroup.add(vent);
+  }
+
+  // ----- 3. MONITOR DO COMPUTADOR E TELA COM CANVAS 2D -----
+  const pcGroup = new THREE.Group();
+  pcGroup.position.set(-1.6, 1.1, 0.1);
+  labGroup.add(pcGroup);
+
+  // Base & Stem
+  const pcBase = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.28, 0.28, 0.04, 20),
+    new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.5, metalness: 0.8 })
+  );
+  pcBase.position.y = 0.02;
+  pcGroup.add(pcBase);
+
+  const pcStem = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.04, 0.04, 0.55, 12),
+    new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4, metalness: 0.8 })
+  );
+  pcStem.position.y = 0.3;
+  pcGroup.add(pcStem);
+
+  // Monitor Bezel Frame
+  const pcFrame = new THREE.Mesh(
+    new THREE.BoxGeometry(1.65, 1.15, 0.08),
+    new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.4, metalness: 0.8 })
+  );
+  pcFrame.position.set(0, 0.9, 0);
+  pcGroup.add(pcFrame);
+
+  // Create Dynamic Canvas 2D for Real-Time Live Spectrum Graph
+  const canvas2D = document.createElement("canvas");
+  canvas2D.width = 512;
+  canvas2D.height = 320;
+  const ctx2D = canvas2D.getContext("2d")!;
+
+  const canvasTexture = new THREE.CanvasTexture(canvas2D);
+  canvasTexture.minFilter = THREE.LinearFilter;
+  canvasTexture.magFilter = THREE.LinearFilter;
+
+  const pcScreenMat = new THREE.MeshBasicMaterial({ map: canvasTexture });
+  const pcScreen = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.55, 1.05),
+    pcScreenMat
+  );
+  pcScreen.position.set(0, 0.9, 0.042);
+  pcGroup.add(pcScreen);
+
+  // Keyboard & Mouse
+  const keyboard = new THREE.Mesh(
+    new THREE.BoxGeometry(1.3, 0.03, 0.45),
+    new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.6, metalness: 0.4 })
+  );
+  keyboard.position.set(0, 0.025, 0.85);
+  pcGroup.add(keyboard);
+
+  const mouse = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.07, 0.08, 0.04, 16),
+    new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5, metalness: 0.5 })
+  );
+  mouse.position.set(0.9, 0.025, 0.85);
+  pcGroup.add(mouse);
+
+  // Function to render the real-time dynamic spectrum graph on canvas 2D
+  const updateSpectrumCanvas = (time: number, isSparking: boolean) => {
+    if (!ctx2D) return;
+
+    // Dark software background
+    ctx2D.fillStyle = "#0f172a";
+    ctx2D.fillRect(0, 0, 512, 320);
+
+    // Top Header Bar
+    ctx2D.fillStyle = "#1e293b";
+    ctx2D.fillRect(0, 0, 512, 36);
+
+    ctx2D.fillStyle = "#38bdf8";
+    ctx2D.font = "bold 14px monospace";
+    ctx2D.fillText("SPECTROMAXx — ANÁLISE ESPECTROMÉTRICA AO VIVO", 14, 23);
+
+    ctx2D.fillStyle = isSparking ? "#22c55e" : "#e2e8f0";
+    ctx2D.font = "bold 11px monospace";
+    ctx2D.fillText(isSparking ? "STATUS: CENTELHAMENTO ATIVO" : "STATUS: AGUARDANDO", 310, 23);
+
+    // Grid lines
+    ctx2D.strokeStyle = "rgba(51, 65, 85, 0.6)";
+    ctx2D.lineWidth = 1;
+    for (let x = 40; x < 360; x += 40) {
+      ctx2D.beginPath();
+      ctx2D.moveTo(x, 45);
+      ctx2D.lineTo(x, 270);
+      ctx2D.stroke();
+    }
+    for (let y = 60; y < 270; y += 35) {
+      ctx2D.beginPath();
+      ctx2D.moveTo(35, y);
+      ctx2D.lineTo(360, y);
+      ctx2D.stroke();
+    }
+
+    // Spectrum Graph Peaks (Fe, C, Si, Mn, Cr, Ni)
+    ctx2D.strokeStyle = "#38bdf8";
+    ctx2D.lineWidth = 2;
+    ctx2D.beginPath();
+
+    const basePeaks = [
+      { x: 50, h: 40 },
+      { x: 80, h: 140 }, // Fe peak
+      { x: 110, h: 60 },
+      { x: 140, h: 190 }, // C peak
+      { x: 170, h: 80 },
+      { x: 200, h: 160 }, // Si peak
+      { x: 230, h: 50 },
+      { x: 260, h: 130 }, // Mn peak
+      { x: 290, h: 70 },
+      { x: 320, h: 110 }, // Cr/Ni peak
+      { x: 350, h: 30 },
+    ];
+
+    ctx2D.moveTo(35, 260);
+
+    basePeaks.forEach((p, idx) => {
+      // Oscillate peak heights when sparking
+      const oscillation = isSparking ? Math.sin(time * 12 + idx) * 12 : 0;
+      const peakY = 260 - (p.h + oscillation);
+      ctx2D.lineTo(p.x, peakY);
+    });
+
+    ctx2D.lineTo(360, 260);
+    ctx2D.stroke();
+
+    // Fill under graph with gradient glow
+    const grad = ctx2D.createLinearGradient(0, 60, 0, 260);
+    grad.addColorStop(0, "rgba(56, 189, 248, 0.35)");
+    grad.addColorStop(1, "rgba(56, 189, 248, 0.0)");
+    ctx2D.fillStyle = grad;
+    ctx2D.fill();
+
+    // Element Peak Labels
+    ctx2D.fillStyle = "#ffaa00";
+    ctx2D.font = "bold 10px monospace";
+    ctx2D.fillText("Fe", 75, 105);
+    ctx2D.fillText("C", 137, 55);
+    ctx2D.fillText("Si", 195, 85);
+    ctx2D.fillText("Mn", 255, 115);
+
+    // Right Side Analysis Readout Panel
+    ctx2D.fillStyle = "#0f172a";
+    ctx2D.fillRect(370, 45, 132, 260);
+    ctx2D.strokeStyle = "#334155";
+    ctx2D.strokeRect(370, 45, 132, 260);
+
+    ctx2D.fillStyle = "#94a3b8";
+    ctx2D.font = "bold 11px monospace";
+    ctx2D.fillText("COMPOSIÇÃO %", 380, 65);
+
+    const elements = [
+      { name: "Fe", val: "93.85%" },
+      { name: "C", val: " 3.42%" },
+      { name: "Si", val: " 2.15%" },
+      { name: "Mn", val: " 0.45%" },
+      { name: "P", val: " 0.02%" },
+      { name: "S", val: " 0.01%" },
+    ];
+
+    elements.forEach((el, i) => {
+      ctx2D.fillStyle = "#e2e8f0";
+      ctx2D.font = "11px monospace";
+      ctx2D.fillText(`${el.name}: ${el.val}`, 380, 92 + i * 22);
+    });
+
+    ctx2D.fillStyle = "#22c55e";
+    ctx2D.fillRect(380, 245, 112, 28);
+    ctx2D.fillStyle = "#0f172a";
+    ctx2D.font = "bold 11px monospace";
+    ctx2D.fillText("✓ APROVADO", 395, 263);
+
+    canvasTexture.needsUpdate = true;
+  };
+
+  return { labGroup, sparkArcMat, sparkLight, updateSpectrumCanvas };
+}
+
 // ============================================================================
 // MAIN PROCESS COMPONENT
 // ============================================================================
@@ -606,7 +902,12 @@ const Process = () => {
     ladlePivot.position.set(22, 0, 0); // Initially far right out of scene
     scene.add(ladlePivot);
 
-    // 4. Fluid Liquid Streams (GLSL Shader)
+    // 4. SPECTROMAXx 3D Lab Station (Quality Control Stage 5)
+    const { labGroup, sparkArcMat, sparkLight, updateSpectrumCanvas } = createLabStation();
+    labGroup.position.set(22, -0.5, 0); // Initially far right out of scene
+    scene.add(labGroup);
+
+    // 5. Fluid Liquid Streams (GLSL Shader)
     // Stream 1: Furnace spout -> Ladle opening
     const { streamMesh: stream1, streamMat: stream1Mat } = createLiquidFlow(2.2);
     stream1.position.set(-2.2, 2.5, 0); // Positioned at furnace spout tip location
@@ -617,7 +918,7 @@ const Process = () => {
     stream2.position.set(0, 3.0, 0); // Positioned above mold sprue funnel
     scene.add(stream2);
 
-    // 5. Spark Splash System
+    // 6. Spark Splash System
     const {
       sparkMesh,
       sparkGeo,
@@ -765,25 +1066,16 @@ const Process = () => {
         .to(ladlePivot.position, { x: 18, duration: 0.04 }, 0.87);
 
       // ====================================================
-      // FASE 5: DESMOLDAGEM E PEÇA FINAL (Scroll 90% a 100%)
-      // Mold upper cope opens, 3D gear cools to polished graphite steel
+      // FASE 5: ESPECTROMETRIA / CONTROLE DE QUALIDADE (Scroll 90% a 100%)
+      // Mold exits left (-18, -0.5, 0), SPECTROMAXx Lab Station enters center (0, -0.5, 0)
       // ====================================================
       masterTimeline
-        .to(moldTop.position, { y: 2.8, duration: 0.08, ease: "power2.out" }, 0.9)
-        .to(
-          pieceMat.emissive,
-          { r: 0.0, g: 0.0, b: 0.0, duration: 0.09, ease: "power2.out" },
-          0.91
-        )
-        .to(pieceMat, { emissiveIntensity: 0, duration: 0.09 }, 0.91)
-        .to(
-          pieceMat.color,
-          { r: 0.23, g: 0.26, b: 0.32, duration: 0.09, ease: "power2.out" },
-          0.91
-        )
-        // Camera moves to clean isometric highlight position
-        .to(camera.position, { x: 0, y: 4.5, z: 11, duration: 0.09, ease: "power3.inOut" }, 0.91)
-        .to(cameraTarget, { x: 0, y: 0.4, z: 0, duration: 0.09, ease: "power3.inOut" }, 0.91);
+        .to(moldGroup.position, { x: -18, duration: 0.04, ease: "power2.in" }, 0.9)
+        .to(labGroup.position, { x: 0, y: -0.5, z: 0, duration: 0.04, ease: "power2.out" }, 0.9)
+        .to(sparkLight, { intensity: 4.5, duration: 0.08 }, 0.92)
+        .to(sparkArcMat, { emissiveIntensity: 5.0, duration: 0.08 }, 0.92)
+        .to(camera.position, { x: 0, y: 5.5, z: 12.5, duration: 0.09, ease: "power3.inOut" }, 0.91)
+        .to(cameraTarget, { x: 0, y: 0.9, z: 0, duration: 0.09, ease: "power3.inOut" }, 0.91);
     }, mainRef);
 
     // ----------------------------------------------------
@@ -821,9 +1113,15 @@ const Process = () => {
       if (stream1Mat) stream1Mat.uniforms.uTime.value += delta;
       if (stream2Mat) stream2Mat.uniforms.uTime.value += delta;
 
-      // Rotate final gear piece in Stage 5
+      // Rotate final gear piece in Stage 5 inside mold if active
       if (pieceGroup) {
         pieceGroup.rotation.y += delta * 0.35;
+      }
+
+      // Update SPECTROMAXx Live Canvas 2D Spectrum Texture when Stage 5 is active
+      if (updateSpectrumCanvas) {
+        const isSparkingStage = activeStep === 4;
+        updateSpectrumCanvas(currentTime / 1000, isSparkingStage);
       }
 
       // Spark particles animation
@@ -884,7 +1182,7 @@ const Process = () => {
         canvasContainer.removeChild(renderer.domElement);
       }
     };
-  }, []);
+  }, [activeStep]);
 
   const currentStage = STAGES[activeStep];
   const Icon = currentStage.icon;
@@ -915,7 +1213,7 @@ const Process = () => {
         {/* ========================================================= */}
         <div className="relative z-10 w-full h-full flex flex-col justify-between p-4 sm:p-8 md:p-12 pointer-events-none">
           
-          {/* Top Header & Navigation */}
+          {/* Top Header & Navigation (Clean UI — Floating Orçamento button removed) */}
           <div className="flex items-center justify-between pointer-events-auto">
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#ff5500]/30 bg-[#ff5500]/10 backdrop-blur-md text-[11px] uppercase tracking-[0.2em] text-[#ff5500] mb-2">
@@ -925,16 +1223,6 @@ const Process = () => {
               <h1 className="font-heading text-xl sm:text-2xl md:text-3xl font-bold uppercase tracking-tight text-white">
                 Processo de <span className="text-gradient-molten">Fundição</span>
               </h1>
-            </div>
-
-            <div className="hidden lg:flex items-center gap-4">
-              <Link
-                to="/orcamento"
-                className="gradient-molten text-white px-5 py-2.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all duration-300 hover:scale-105 shadow-lg shadow-[#ff5500]/20 flex items-center gap-2"
-              >
-                Solicitar Orçamento
-                <ArrowRight size={14} />
-              </Link>
             </div>
           </div>
 
@@ -989,16 +1277,46 @@ const Process = () => {
                 ))}
               </div>
 
-              {/* Material Badge Footer */}
-              <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 text-xs text-foreground/70">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck size={14} className="text-cyan-400" />
-                  <span>{currentStage.material}</span>
+              {/* Stage 5 Special Quality Control HUD Table */}
+              {activeStep === 4 ? (
+                <div className="p-3 rounded-xl bg-cyan-950/40 border border-cyan-500/30 text-xs text-foreground/80 space-y-2">
+                  <div className="flex items-center justify-between font-mono text-[11px] text-cyan-400 font-bold border-b border-cyan-500/20 pb-1">
+                    <span className="flex items-center gap-1.5">
+                      <Activity size={13} className="animate-pulse text-cyan-400" />
+                      ESPECTRÔMETRO SPECTROMAXx
+                    </span>
+                    <span className="flex items-center gap-1 text-emerald-400 font-bold">
+                      <FileCheck size={13} />
+                      APROVADO 100%
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1.5 font-mono text-[10px] text-foreground/70 pt-1">
+                    <div className="bg-black/30 p-1.5 rounded border border-white/5 text-center">
+                      <span className="text-foreground/40 block">CARBONO (C)</span>
+                      <strong className="text-white">3.42 %</strong>
+                    </div>
+                    <div className="bg-black/30 p-1.5 rounded border border-white/5 text-center">
+                      <span className="text-foreground/40 block">SILÍCIO (Si)</span>
+                      <strong className="text-white">2.15 %</strong>
+                    </div>
+                    <div className="bg-black/30 p-1.5 rounded border border-white/5 text-center">
+                      <span className="text-foreground/40 block">MANGANÊS (Mn)</span>
+                      <strong className="text-white">0.45 %</strong>
+                    </div>
+                  </div>
                 </div>
-                <span className="font-mono text-[#ff5500] text-[11px] font-semibold">
-                  Etapa 0{activeStep + 1} de 05
-                </span>
-              </div>
+              ) : (
+                /* Material Badge Footer for Stages 1 to 4 */
+                <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 text-xs text-foreground/70">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck size={14} className="text-cyan-400" />
+                    <span>{currentStage.material}</span>
+                  </div>
+                  <span className="font-mono text-[#ff5500] text-[11px] font-semibold">
+                    Etapa 0{activeStep + 1} de 05
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
