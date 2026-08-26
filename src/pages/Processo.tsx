@@ -1,12 +1,9 @@
-import Process from "@/components/sections/Process";
-import ProcessQuality from "@/components/sections/ProcessQuality";
+import CastingProcess from '@/components/casting/CastingProcess';
 
 const Processo = () => (
   <>
-    <Process />
-    <ProcessQuality />
+    <CastingProcess />
   </>
 );
 
 export default Processo;
-

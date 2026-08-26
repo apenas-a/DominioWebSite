@@ -2,7 +2,7 @@ import { useRef, useState, useEffect } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Microscope, TestTube, Scale, ShieldCheck, Activity, CheckCircle2, Award, Zap } from "lucide-react";
-import SPECTROMAXxR3F from "@/components/3d/SPECTROMAXxR3F";
+import LabSpectrometerCanvas from "@/components/3d/LabSpectrometerCanvas";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -50,7 +50,7 @@ const ProcessQuality = () => {
     <section
       ref={sectionRef}
       className="relative w-full bg-[#0a0f18] py-16 sm:py-24 border-t border-border/50 overflow-hidden"
-      style={{ minHeight: "220vh" }} // Provides continuous scroll distance for R3F camera scrub
+      style={{ minHeight: "220vh" }} // Provides continuous scroll distance for camera scrub
     >
       {/* Background cyan glow accent */}
       <div className="absolute top-1/3 right-0 -translate-y-1/2 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
@@ -59,7 +59,7 @@ const ProcessQuality = () => {
       <div className="sticky top-0 h-screen w-full flex items-center justify-center p-4 sm:p-8">
         <div className="section-container w-full max-w-7xl mx-auto">
           
-          {/* Main Grid: 35% Left (Cards HUD), 65% Right (R3F 3D Canvas) */}
+          {/* Main Grid: 35% Left (Cards HUD), 65% Right (3D WebGL Canvas) */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
             
             {/* ========================================================= */}
@@ -162,10 +162,10 @@ const ProcessQuality = () => {
             </div>
 
             {/* ========================================================= */}
-            {/* RIGHT 65% COLUMN: React Three Fiber (R3F) 3D Canvas */}
+            {/* RIGHT 65% COLUMN: 3D WebGL Canvas */}
             {/* ========================================================= */}
             <div className="lg:col-span-8 h-[450px] sm:h-[550px] relative z-0">
-              <SPECTROMAXxR3F
+              <LabSpectrometerCanvas
                 sectionRef={sectionRef}
                 onProgressUpdate={(p) => setScrollProgress(p)}
               />
