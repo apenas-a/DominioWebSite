@@ -39,20 +39,27 @@ export const moltenSurfaceShader = {
       vec2 noiseUv = vWorldPos.xz * 5.0 + uTime * 0.5;
       float n = hash(floor(noiseUv));
       
-      vec3 deepRed = vec3(0.8, 0.13, 0.0);
-      vec3 brightOrange = vec3(1.0, 0.53, 0.0);
+      vec3 darkMetal = vec3(0.2, 0.05, 0.02);
+      vec3 deepRed = vec3(0.85, 0.18, 0.02);
+      vec3 brightOrange = vec3(1.0, 0.65, 0.15);
+      vec3 whiteHot = vec3(1.0, 0.95, 0.8);
       
-      vec3 color = mix(deepRed, brightOrange, n * uIntensity);
+      // Color ramp based on intensity
+      vec3 baseCol = mix(darkMetal, deepRed, clamp(uIntensity * 1.5, 0.0, 1.0));
+      vec3 hotCol = mix(baseCol, brightOrange, clamp((uIntensity - 0.3) * 1.8, 0.0, 1.0));
+      hotCol = mix(hotCol, whiteHot, clamp((uIntensity - 0.75) * 4.0, 0.0, 1.0));
+      
+      vec3 color = mix(hotCol, brightOrange, n * 0.25 * uIntensity);
       
       // Fresnel rim glow
       vec3 viewDir = normalize(cameraPosition - vWorldPos);
       float fresnel = 1.0 - max(dot(viewDir, vNormal), 0.0);
-      fresnel = pow(fresnel, 3.0);
+      fresnel = pow(fresnel, 2.5);
       
-      color += vec3(1.0, 0.8, 0.2) * fresnel * uIntensity;
+      color += vec3(1.0, 0.85, 0.3) * fresnel * uIntensity;
       
-      // High emissive values
-      vec3 emissive = color * 4.0;
+      // Scale emissive with intensity so 0.0 has zero glow
+      vec3 emissive = color * (uIntensity * 4.5);
       
       gl_FragColor = vec4(emissive, 1.0);
     }

@@ -265,11 +265,19 @@ const SteelFamilySection = ({ id, badge, title, description, alloys, isFirst = f
   }, []);
 
   return (
-    <section 
-      id={id} 
+    <section
+      id={id}
       ref={containerRef}
-      className={`${isFirst ? "pt-24 sm:pt-32" : "pt-16 sm:pt-24"} pb-16 sm:pb-24 surface-forge relative overflow-hidden ${!isFirst ? "border-t border-border/40" : ""}`}
+      className={`${isFirst ? "pt-24 sm:pt-32" : "pt-20 sm:pt-28"} pb-20 sm:pb-28 relative overflow-hidden`}
+      style={{
+        background: isFirst
+          ? "radial-gradient(ellipse at 50% 0%, hsl(25 95% 50% / 0.04) 0%, transparent 55%), linear-gradient(180deg, hsl(30 15% 7%) 0%, hsl(30 12% 5%) 100%)"
+          : "radial-gradient(ellipse at 50% 100%, hsl(25 95% 50% / 0.03) 0%, transparent 55%), linear-gradient(180deg, hsl(30 12% 5%) 0%, hsl(30 15% 7%) 100%)",
+      }}
     >
+      {/* Subtle grid */}
+      <div className="absolute inset-0 bg-grid opacity-15 pointer-events-none" />
+
       <div className="section-container relative z-10">
         <div className="steel-header text-center mb-8 sm:mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-5 rounded-full border border-accent/30 bg-accent/5 text-xs uppercase tracking-[0.2em] text-accent backdrop-blur-md">

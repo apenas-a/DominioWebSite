@@ -1,173 +1,266 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Settings2, Flame, Wrench } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { ArrowRight } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import processMoldagemImg from "@/assets/process-moldagem.jpg";
+import processFusaoImg from "@/assets/process-fusao.jpg";
+import processVazamentoImg from "@/assets/process-vazamento.jpg";
+import processAnaliseImg from "@/assets/process-analise.jpg";
+import processAcabamentoImg from "@/assets/process-acabamento.jpg";
 
 gsap.registerPlugin(ScrollTrigger);
 
+const STEPS = [
+  {
+    index: "01",
+    name: "Moldagem",
+    short: "Moldes precisos",
+    desc: "Areia ou casca de resina — geometria controlada ao décimo.",
+    image: processMoldagemImg,
+  },
+  {
+    index: "02",
+    name: "Fusão",
+    short: "Metal vivo",
+    desc: "Forno elétrico, análise espectral em tempo real.",
+    image: processFusaoImg,
+  },
+  {
+    index: "03",
+    name: "Vazamento",
+    short: "Fluxo controlado",
+    desc: "Temperatura, velocidade e pressão monitoradas na corrida.",
+    image: processVazamentoImg,
+  },
+  {
+    index: "04",
+    name: "Análise",
+    short: "Rastreabilidade total",
+    desc: "Espectrometria e ensaios não-destrutivos em cada lote.",
+    image: processAnaliseImg,
+  },
+  {
+    index: "05",
+    name: "Acabamento",
+    short: "Precisão final",
+    desc: "Usinagem, jato, pintura e inspeção dimensional.",
+    image: processAcabamentoImg,
+  },
+];
+
 const HomeProcess = () => {
   const sectionRef = useRef<HTMLElement>(null);
+  const lineRef = useRef<HTMLDivElement>(null);
+  const [activeStep, setActiveStep] = useState(0);
+  const [hoveredStep, setHoveredStep] = useState<number | null>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const progressLineRef = useRef<HTMLDivElement>(null);
 
-  const steps = [
-    {
-      icon: Settings2,
-      title: "Planejamento e Moldagem",
-      desc: "Precisão na criação dos moldes para garantir dimensões exatas.",
-    },
-    {
-      icon: Flame,
-      title: "Fusão e Análise",
-      desc: "Controle térmico e químico rigoroso do metal fundido.",
-    },
-    {
-      icon: Wrench,
-      title: "Vazamento e Acabamento",
-      desc: "Solidificação controlada e usinagem com padrão de qualidade.",
-    },
-  ];
+  const displayed = hoveredStep !== null ? hoveredStep : activeStep;
+  const step = STEPS[displayed];
 
+  // Image crossfade on step change
   useEffect(() => {
-    const el = sectionRef.current;
-    if (!el) return;
+    const img = imgRef.current;
+    if (!img) return;
+    gsap.fromTo(img, { opacity: 0, scale: 1.04 }, { opacity: 1, scale: 1, duration: 0.45, ease: "power2.out" });
+  }, [displayed]);
 
-    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReduced) return;
+  // Progress indicator
+  useEffect(() => {
+    const line = progressLineRef.current;
+    if (!line) return;
+    gsap.to(line, {
+      width: `${((displayed + 1) / STEPS.length) * 100}%`,
+      duration: 0.4,
+      ease: "power2.out",
+    });
+  }, [displayed]);
+
+  // Entrance
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
 
     const ctx = gsap.context(() => {
-      // Section title
       gsap.fromTo(
-        ".process-home-title",
-        { opacity: 0, y: 30 },
+        ".process-reveal",
+        { opacity: 0, y: 35 },
         {
           opacity: 1,
           y: 0,
+          stagger: 0.08,
           duration: 0.7,
           ease: "power3.out",
           scrollTrigger: {
-            trigger: el,
-            start: "top 85%",
-            toggleActions: "play none none none",
-          },
-        }
-      );
-
-      // Steps stagger
-      gsap.fromTo(
-        ".process-home-step",
-        { opacity: 0, y: 40 },
-        {
-          opacity: 1,
-          y: 0,
-          stagger: 0.15,
-          duration: 0.6,
-          ease: "power3.out",
-          scrollTrigger: {
-            trigger: el,
-            start: "top 85%",
-            toggleActions: "play none none none",
-          },
-        }
-      );
-
-      // Connection line
-      gsap.fromTo(
-        ".process-home-line",
-        { scaleX: 0 },
-        {
-          scaleX: 1,
-          duration: 1,
-          ease: "power2.inOut",
-          scrollTrigger: {
-            trigger: el,
+            trigger: section,
             start: "top 80%",
             toggleActions: "play none none none",
           },
         }
       );
-
-      // CTA
-      gsap.fromTo(
-        ".process-home-cta",
-        { opacity: 0, y: 20 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.5,
-          ease: "power2.out",
-          scrollTrigger: {
-            trigger: el,
-            start: "top 90%",
-            toggleActions: "play none none none",
-          },
-        }
-      );
-    }, el);
+    }, section);
 
     return () => ctx.revert();
   }, []);
 
+  // Auto-advance
+  useEffect(() => {
+    if (hoveredStep !== null) return;
+    const t = setInterval(() => {
+      setActiveStep((prev) => (prev + 1) % STEPS.length);
+    }, 2800);
+    return () => clearInterval(t);
+  }, [hoveredStep]);
+
   return (
     <section
       ref={sectionRef}
-      className="py-16 sm:py-24 gradient-dark relative overflow-hidden"
+      className="py-16 sm:py-24 relative overflow-hidden"
     >
-      {/* Background accent */}
-      <div className="absolute top-0 right-0 w-1/2 h-full bg-molten/3 blur-[100px] pointer-events-none" />
+      {/* Forge glow */}
+      <div className="absolute right-0 top-0 w-1/3 h-2/3 bg-molten/4 blur-[120px] pointer-events-none" />
 
       <div className="section-container relative z-10">
-        {/* Title */}
-        <div className="process-home-title text-center mb-12 sm:mb-16">
-          <h2 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold uppercase tracking-tight mb-4 text-foreground">
-            Tradição e{" "}
-            <span className="text-gradient-molten">Tecnologia</span>
-          </h2>
-          <div className="w-20 h-[2px] gradient-molten mx-auto mb-6" />
-          <p className="text-foreground/55 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
-            Um processo produtivo dominado de ponta a ponta, unindo a arte da
-            fundição à tecnologia moderna de controle de qualidade.
-          </p>
-        </div>
 
-        {/* Steps */}
-        <div className="process-home-steps grid grid-cols-1 sm:grid-cols-3 gap-8 relative">
-          {/* Connection line — desktop only */}
-          <div className="process-home-line hidden sm:block absolute top-12 left-[16%] right-[16%] h-px bg-gradient-to-r from-transparent via-accent/25 to-transparent z-0 pointer-events-none origin-left" />
+        {/* Header */}
+        <div className="process-reveal opacity-0 mb-10 sm:mb-14 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-[0.4em] text-accent/60 mb-3">
+              // Processo
+            </p>
+            <h2 className="font-heading font-black uppercase text-3xl sm:text-4xl md:text-5xl leading-none">
+              Dominado{" "}
+              <span className="text-gradient-molten">ponta a ponta</span>
+            </h2>
+          </div>
 
-          {steps.map((step, index) => {
-            const Icon = step.icon;
-            return (
-              <div
-                key={step.title}
-                className="process-home-step relative z-10 flex flex-col items-center text-center group"
-              >
-                <div className="w-24 h-24 rounded-full bg-card border-2 border-border/40 flex items-center justify-center mb-6 relative overflow-hidden group-hover:border-accent/40 transition-all duration-500 shadow-lg group-hover:shadow-accent/10">
-                  <div className="absolute inset-0 bg-gradient-to-t from-molten/15 to-transparent translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
-                  <Icon className="w-10 h-10 text-foreground/70 group-hover:text-accent relative z-10 transition-colors duration-300" />
-                </div>
-                <h3 className="font-heading text-base sm:text-lg font-bold uppercase mb-2 text-foreground group-hover:text-accent transition-colors">
-                  {step.title}
-                </h3>
-                <p className="text-foreground/55 text-sm leading-relaxed px-2">
-                  {step.desc}
-                </p>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* CTA */}
-        <div className="process-home-cta text-center mt-12 sm:mt-16">
           <Link
             to="/processo"
-            className="inline-flex items-center gap-2 border border-border/50 hover:border-accent/40 bg-card/30 px-6 py-3 rounded-md text-foreground/80 hover:text-accent transition-all duration-300 font-medium uppercase tracking-wider text-sm group"
+            className="inline-flex items-center gap-3 text-xs font-mono uppercase tracking-[0.3em] text-foreground/35 hover:text-accent transition-colors duration-300 group shrink-0"
           >
-            Conheça nosso chão de fábrica
-            <ArrowRight
-              size={16}
-              className="group-hover:translate-x-1 transition-transform"
-            />
+            <span>Ver chão de fábrica</span>
+            <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
           </Link>
+        </div>
+
+        {/* ── Main layout ─────────────────────────────────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-8">
+
+          {/* Step list — takes 2/5 */}
+          <div className="process-reveal opacity-0 lg:col-span-2 flex flex-col">
+
+            {/* Progress bar */}
+            <div className="h-px bg-border/20 mb-6 relative overflow-hidden">
+              <div
+                ref={progressLineRef}
+                className="absolute left-0 top-0 h-full"
+                style={{
+                  width: `${((displayed + 1) / STEPS.length) * 100}%`,
+                  background: "linear-gradient(to right, hsl(20 100% 55%), hsl(25 95% 50%))",
+                  transition: "none",
+                }}
+              />
+            </div>
+
+            <div className="flex flex-col divide-y divide-border/15">
+              {STEPS.map((s, i) => {
+                const isActive = displayed === i;
+                return (
+                  <button
+                    key={i}
+                    className={`text-left py-4 px-1 flex items-center gap-5 transition-all duration-300 group/step ${
+                      isActive
+                        ? "text-foreground"
+                        : "text-foreground/30 hover:text-foreground/60"
+                    }`}
+                    onClick={() => { setActiveStep(i); setHoveredStep(null); }}
+                    onMouseEnter={() => setHoveredStep(i)}
+                    onMouseLeave={() => setHoveredStep(null)}
+                  >
+                    <span
+                      className={`font-mono text-[9px] shrink-0 transition-colors ${
+                        isActive ? "text-accent" : "text-foreground/20"
+                      }`}
+                    >
+                      {s.index}
+                    </span>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className={`font-heading font-bold uppercase text-base sm:text-lg tracking-tight transition-all ${isActive ? "text-foreground" : ""}`}>
+                          {s.name}
+                        </span>
+                        {isActive && (
+                          <span className="font-mono text-[8px] uppercase tracking-widest text-foreground/25">
+                            — {s.short}
+                          </span>
+                        )}
+                      </div>
+
+                      <div
+                        className={`overflow-hidden transition-all duration-400 ${
+                          isActive ? "max-h-10 opacity-100 mt-1" : "max-h-0 opacity-0"
+                        }`}
+                      >
+                        <p className="text-foreground/40 text-xs leading-relaxed">
+                          {s.desc}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Active dot */}
+                    <div
+                      className={`w-1.5 h-1.5 rounded-full shrink-0 transition-all duration-300 ${
+                        isActive ? "bg-accent scale-100" : "bg-border/30 scale-75"
+                      }`}
+                    />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Image — takes 3/5 */}
+          <div className="process-reveal opacity-0 lg:col-span-3 relative rounded-sm overflow-hidden min-h-[260px] sm:min-h-[340px] lg:min-h-0">
+            <div className="absolute inset-0 overflow-hidden rounded-sm">
+              <img
+                ref={imgRef}
+                src={step.image}
+                alt={step.name}
+                className="w-full h-full object-cover scale-[1.04]"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/20 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-r from-background/20 via-transparent to-transparent" />
+            </div>
+
+            {/* Step info overlay */}
+            <div className="absolute inset-0 p-6 sm:p-8 flex flex-col justify-end z-10">
+              <div>
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="font-mono text-[9px] uppercase tracking-[0.4em] text-accent/60">
+                    Etapa {step.index}
+                  </span>
+                  <div className="flex-1 h-px bg-accent/15" />
+                </div>
+                <h3 className="font-heading font-black uppercase text-2xl sm:text-3xl text-foreground leading-none">
+                  {step.name}
+                </h3>
+              </div>
+            </div>
+
+            {/* Corner marks */}
+            <div className="absolute top-4 right-4 w-5 h-5 border-t border-r border-foreground/15 pointer-events-none" />
+            <div className="absolute bottom-4 left-4 w-5 h-5 border-b border-l border-foreground/10 pointer-events-none" />
+          </div>
+        </div>
+
+        {/* Bottom caption */}
+        <div className="process-reveal opacity-0 mt-8 pt-8 border-t border-border/15">
+          <p className="font-mono text-[9px] uppercase tracking-[0.35em] text-foreground/20 text-center">
+            Controle metalúrgico e dimensional em todas as etapas · Quintana · SP
+          </p>
         </div>
       </div>
     </section>

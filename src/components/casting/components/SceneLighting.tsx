@@ -5,7 +5,7 @@ import { castingState, phaseProgress, lerp, PHASES } from '@/components/casting/
 
 export default function SceneLighting() {
   const heatLightRef = useRef<THREE.PointLight>(null);
-  const heatLight2Ref = useRef<THREE.PointLight>(null);
+  const cavityLightRef = useRef<THREE.DirectionalLight>(null);
 
   useFrame(() => {
     const p = castingState.progress;
@@ -38,16 +38,23 @@ export default function SceneLighting() {
 
   return (
     <>
-      {/* Key light */}
-      <directionalLight position={[10, 15, 10]} intensity={1.2} color="#ffffff" />
+      {/* Key light — main directional, slightly warm */}
+      <directionalLight position={[10, 18, 8]} intensity={1.4} color="#fff5ee" castShadow={false} />
       {/* Rim/fill lights */}
-      <directionalLight position={[-8, 10, -8]} intensity={0.35} color="#7dd3fc" />
-      <directionalLight position={[0, 5, 12]} intensity={0.4} color="#ffaa66" />
+      <directionalLight position={[-8, 10, -8]} intensity={0.3} color="#7dd3fc" />
+      <directionalLight position={[0, 5, 12]} intensity={0.35} color="#ffaa66" />
+      {/* Top-down technical cavity light — strong overhead for mold-open phases */}
+      <directionalLight
+        ref={cavityLightRef}
+        position={[1.5, 12, 2]}
+        intensity={1.6}
+        color="#e8d5b0"
+        castShadow={false}
+      />
       {/* Ambient */}
-      <ambientLight intensity={0.45} color="#ffffff" />
-      {/* Dynamic heat lights */}
+      <ambientLight intensity={0.4} color="#ffffff" />
+      {/* Dynamic heat point light */}
       <pointLight ref={heatLightRef} position={[0, 2, 0]} intensity={0} color="#ff4400" distance={15} decay={2} />
-      <pointLight ref={heatLight2Ref} position={[0, 1, 0]} intensity={0} color="#ff6600" distance={10} decay={2} />
     </>
   );
 }

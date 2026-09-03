@@ -1,93 +1,56 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import empresaImg from "@/assets/Empresa.jpeg";
-import { Calendar, Layers, Shield, Handshake } from "lucide-react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { ArrowRight } from "lucide-react";
 
 gsap.registerPlugin(ScrollTrigger);
 
+const PILLARS = [
+  { short: "2022", label: "Fundada" },
+  { short: "Do projeto à peça", label: "Ciclo completo" },
+  { short: "Sob medida", label: "Cada cliente" },
+  { short: "Quintana · SP", label: "Localização" },
+];
+
 const About = () => {
   const sectionRef = useRef<HTMLElement>(null);
-  const imageRef = useRef<HTMLDivElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const [activeItem, setActiveItem] = useState<number | null>(null);
 
-  const highlights = [
-    {
-      icon: Calendar,
-      title: "Fundada em 2022",
-      description:
-        "Compromisso em trazer qualidade superior e alta confiabilidade para nossos parceiros comerciais.",
-    },
-    {
-      icon: Layers,
-      title: "Do Projeto à Fusão",
-      description:
-        "Trabalhamos em todo o ciclo: desde o planejamento técnico, modelagem e projeto até a fusão das peças.",
-    },
-    {
-      icon: Shield,
-      title: "Qualidade Garantida",
-      description:
-        "Rigoroso controle metalúrgico e dimensional em todas as etapas para garantir a melhor entrega.",
-    },
-    {
-      icon: Handshake,
-      title: "Soluções Sob Medida",
-      description:
-        "Entendemos a real necessidade de cada cliente para oferecer ligas metálicas eficientes e sob medida.",
-    },
-  ];
-
+  // ── Parallax image ───────────────────────────────────────────────────────────
   useEffect(() => {
     const section = sectionRef.current;
-    const image = imageRef.current;
-    if (!section || !image) return;
+    const img = imgRef.current;
+    if (!section || !img) return;
 
     const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReduced) return;
 
     const ctx = gsap.context(() => {
-      // Title reveal
+      // Image slides in from left
       gsap.fromTo(
-        ".about-title",
-        { opacity: 0, y: 30 },
+        img.parentElement,
+        { clipPath: "inset(0 100% 0 0)", opacity: 0 },
         {
+          clipPath: "inset(0 0% 0 0)",
           opacity: 1,
-          y: 0,
-          duration: 0.7,
-          ease: "power3.out",
+          duration: 1.1,
+          ease: "power4.out",
           scrollTrigger: {
-            trigger: ".about-title",
-            start: "top 90%",
+            trigger: section,
+            start: "top 75%",
             toggleActions: "play none none none",
           },
         }
       );
 
-      // Image reveal
-      gsap.fromTo(
-        image,
-        { opacity: 0, x: -40 },
-        {
-          opacity: 1,
-          x: 0,
-          duration: 0.8,
-          ease: "power3.out",
-          scrollTrigger: {
-            trigger: image,
-            start: "top 85%",
-            toggleActions: "play none none none",
-          },
-        }
-      );
-
-      // Image parallax on scroll
-      const imgInner = image.querySelector("img");
-      if (imgInner) {
-        gsap.to(imgInner, {
-          y: 30,
+      if (!prefersReduced) {
+        gsap.to(img, {
+          y: 40,
           ease: "none",
           scrollTrigger: {
-            trigger: image,
+            trigger: section,
             start: "top bottom",
             end: "bottom top",
             scrub: true,
@@ -95,19 +58,36 @@ const About = () => {
         });
       }
 
-      // Highlight cards stagger
+      // Text lines stagger from right
       gsap.fromTo(
-        ".about-card",
-        { opacity: 0, y: 30, x: 20 },
+        ".about-line",
+        { opacity: 0, x: 50 },
+        {
+          opacity: 1,
+          x: 0,
+          stagger: 0.09,
+          duration: 0.7,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: ".about-text-col",
+            start: "top 80%",
+            toggleActions: "play none none none",
+          },
+        }
+      );
+
+      // Pillar items
+      gsap.fromTo(
+        ".about-pillar",
+        { opacity: 0, y: 20 },
         {
           opacity: 1,
           y: 0,
-          x: 0,
-          stagger: 0.12,
-          duration: 0.6,
+          stagger: 0.1,
+          duration: 0.55,
           ease: "power3.out",
           scrollTrigger: {
-            trigger: ".about-cards-grid",
+            trigger: ".about-pillars",
             start: "top 85%",
             toggleActions: "play none none none",
           },
@@ -122,70 +102,114 @@ const About = () => {
     <section
       ref={sectionRef}
       id="sobre"
-      className="py-16 sm:py-24 gradient-dark relative overflow-hidden"
+      className="relative overflow-hidden py-20 sm:py-28"
+      style={{
+        background:
+          "radial-gradient(ellipse at 10% 50%, hsl(20 100% 55% / 0.04) 0%, transparent 50%), hsl(30 15% 7%)",
+      }}
     >
-      {/* Subtle background grid */}
-      <div className="absolute inset-0 bg-grid opacity-30 pointer-events-none" />
+      {/* Technical grid */}
+      <div className="absolute inset-0 bg-grid opacity-20 pointer-events-none" />
 
       <div className="section-container relative z-10">
-        {/* Title */}
-        <div className="about-title text-center mb-10 sm:mb-16">
-          <h2 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold uppercase tracking-tight mb-3 sm:mb-4">
-            Sobre a <span className="text-gradient-molten">Fundição Domínio</span>
-          </h2>
-          <div className="w-20 h-[2px] gradient-molten mx-auto mb-6" />
-          <p className="text-sm sm:text-base md:text-lg text-foreground/60 max-w-3xl mx-auto leading-relaxed">
-            Localizada em Quintana-SP, somos uma fundição especializada na produção de peças em
-            ferro fundido e aço carbono de alta qualidade. Nossa missão é entender as necessidades
-            de cada cliente para oferecer soluções personalizadas e eficientes.
-          </p>
-        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-          {/* Image */}
-          <div
-            ref={imageRef}
-            className="lg:col-span-6 relative group overflow-hidden rounded-xl"
-          >
-            <div className="relative overflow-hidden rounded-xl">
+          {/* ── Image column ─────────────────────────────────────────── */}
+          <div className="relative aspect-[4/3] overflow-hidden rounded-sm">
+            {/* The clip-path container */}
+            <div className="absolute inset-0 overflow-hidden rounded-sm">
               <img
+                ref={imgRef}
                 src={empresaImg}
-                alt="Vista aérea da Fundição Domínio em Quintana-SP"
-                className="w-full h-full object-cover aspect-[4/3] sm:aspect-video lg:aspect-[4/3] transform group-hover:scale-[1.03] transition-transform duration-700 ease-out"
+                alt="Fundição Domínio — Quintana SP"
+                className="w-full h-full object-cover scale-[1.08]"
               />
               {/* Vignette */}
-              <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_40px_20px_hsl(30_15%_7%)] sm:shadow-[inset_0_0_60px_30px_hsl(30_15%_7%)]" />
-              <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-background/80 via-transparent to-background/30" />
-              <div className="absolute inset-0 pointer-events-none bg-gradient-to-r from-background/30 via-transparent to-background/30" />
-
-              {/* Accent highlight on hover */}
-              <div className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-accent/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-background/20 pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-r from-background/20 via-transparent to-transparent pointer-events-none" />
             </div>
 
-            {/* Technical label */}
-            <div className="absolute bottom-3 left-3 label-tech bg-background/70 backdrop-blur-md px-3 py-1.5 rounded-md border border-border/30">
-              Quintana - SP
+            {/* Corner markers */}
+            <div className="absolute top-3 left-3 w-5 h-5 border-t border-l border-accent/50" />
+            <div className="absolute top-3 right-3 w-5 h-5 border-t border-r border-accent/30" />
+            <div className="absolute bottom-3 left-3 w-5 h-5 border-b border-l border-accent/30" />
+            <div className="absolute bottom-3 right-3 w-5 h-5 border-b border-r border-accent/50" />
+
+            {/* Label */}
+            <div className="absolute bottom-5 left-5 label-tech text-foreground/30">
+              Quintana · SP · Brasil
             </div>
           </div>
 
-          {/* Highlight cards */}
-          <div className="about-cards-grid lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {highlights.map((highlight) => (
-              <div
-                key={highlight.title}
-                className="about-card glass-dark edge-glow rounded-xl p-5 sm:p-6 transition-all duration-300 group hover:-translate-y-1 hover:shadow-lg hover:shadow-accent/5"
-              >
-                <div className="w-10 h-10 rounded-lg gradient-molten flex items-center justify-center mb-4 group-hover:scale-105 transition-transform duration-300">
-                  <highlight.icon className="w-5 h-5 text-accent-foreground" />
+          {/* ── Text column ──────────────────────────────────────────── */}
+          <div className="about-text-col flex flex-col gap-0">
+            {/* Section label */}
+            <p className="about-line font-mono text-[10px] uppercase tracking-[0.4em] text-accent/60 mb-5">
+              // Sobre nós
+            </p>
+
+            {/* Headline — split lines */}
+            <h2 className="about-line font-heading font-black uppercase text-4xl sm:text-5xl leading-[0.92] mb-1">
+              Entender
+            </h2>
+            <h2 className="about-line font-heading font-black uppercase text-4xl sm:text-5xl leading-[0.92] text-gradient-molten mb-6">
+              para atender.
+            </h2>
+
+            <div className="about-line w-10 h-px bg-accent/40 mb-7" />
+
+            {/* Body text */}
+            <p className="about-line text-foreground/55 text-sm sm:text-base leading-relaxed mb-3">
+              Localizada em Quintana-SP, a Fundição Domínio nasceu com um propósito simples:{" "}
+              <span className="text-foreground/80">entender a real necessidade de cada cliente</span>{" "}
+              antes de fundir qualquer peça.
+            </p>
+            <p className="about-line text-foreground/40 text-sm leading-relaxed mb-10">
+              Operamos todo o ciclo — do planejamento à usinagem — com controle metalúrgico
+              rigoroso e engenharia aplicada a ferro fundido e aço carbono.
+            </p>
+
+            {/* Pillar list — interactive, no cards */}
+            <div className="about-pillars flex flex-col divide-y divide-border/20">
+              {PILLARS.map((p, i) => (
+                <div
+                  key={i}
+                  className={`about-pillar opacity-0 flex items-center justify-between py-3.5 cursor-default transition-colors duration-200 group ${
+                    activeItem === i ? "text-accent" : "text-foreground/50 hover:text-foreground/80"
+                  }`}
+                  onMouseEnter={() => setActiveItem(i)}
+                  onMouseLeave={() => setActiveItem(null)}
+                >
+                  <div className="flex items-center gap-4">
+                    <span className="font-mono text-[9px] text-foreground/20 w-4">{String(i + 1).padStart(2, "0")}</span>
+                    <span className="font-heading font-semibold uppercase tracking-wide text-sm">
+                      {p.short}
+                    </span>
+                  </div>
+                  <span
+                    className={`font-mono text-[9px] uppercase tracking-[0.25em] transition-all duration-300 ${
+                      activeItem === i ? "opacity-100 text-accent/70" : "opacity-0"
+                    }`}
+                  >
+                    {p.label}
+                  </span>
+                  <div
+                    className={`w-px bg-accent/40 transition-all duration-300 ${
+                      activeItem === i ? "h-5" : "h-0"
+                    }`}
+                  />
                 </div>
-                <h3 className="font-heading text-base sm:text-lg font-semibold uppercase mb-2 text-foreground group-hover:text-accent transition-colors duration-300">
-                  {highlight.title}
-                </h3>
-                <p className="text-foreground/55 text-xs sm:text-sm leading-relaxed">
-                  {highlight.description}
-                </p>
-              </div>
-            ))}
+              ))}
+            </div>
+
+            {/* CTA */}
+            <Link
+              to="/orcamento"
+              className="about-line mt-10 inline-flex items-center gap-3 text-xs font-mono uppercase tracking-[0.3em] text-foreground/40 hover:text-accent transition-colors duration-300 group w-fit"
+            >
+              <span>Fale conosco</span>
+              <ArrowRight size={13} className="group-hover:translate-x-1.5 transition-transform duration-300" />
+            </Link>
           </div>
         </div>
       </div>

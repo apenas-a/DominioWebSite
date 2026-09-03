@@ -1,341 +1,402 @@
 import MoltenParticles from "@/components/MoltenParticles";
-import { Mail, MessageCircle, MapPin, Flame, Check, Layers, Cpu, FlaskConical } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { Mail, MessageCircle, MapPin, Layers, Cpu, FlaskConical, ArrowRight, Check } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
 
+const whatsappNumber = "5514991790555";
+const emailTo = "contato@fundicaodominio.com.br";
+
+const emailMolde = `mailto:${emailTo}?subject=${encodeURIComponent("Orçamento - Fundição com Molde Existente")}&body=${encodeURIComponent(
+  "Olá equipe Fundição Domínio,\n\nGostaria de solicitar um orçamento de fundição para peças utilizando ferramental/molde já existente.\n\n" +
+  "Seguem detalhes preliminares:\n" +
+  "- Tipo/Material do molde (Madeira, Alumínio, Resina, etc):\n" +
+  "- Peso aproximado da peça:\n" +
+  "- Liga metálica desejada:\n" +
+  "- Demanda estimada:\n\n" +
+  "[Se possível, anexe fotos do molde e das peças para nos ajudar no orçamento]\n\n" +
+  "Atenciosamente,\n[Seu Nome / Empresa]"
+)}`;
+
+const emailDesenvolvimento = `mailto:${emailTo}?subject=${encodeURIComponent("Orçamento - Desenvolvimento Completo de Peça")}&body=${encodeURIComponent(
+  "Olá equipe Fundição Domínio,\n\nGostaria de solicitar o desenvolvimento completo de um novo projeto de fundição.\n\n" +
+  "Seguem detalhes preliminares:\n" +
+  "- Possuo desenho técnico (2D/3D) ou Amostra física:\n" +
+  "- Liga metálica desejada (se souber):\n" +
+  "- Aplicação/função da peça:\n" +
+  "- Demanda anual estimada:\n\n" +
+  "[Se possível, anexe desenhos técnicos, fotos ou especificações técnicas]\n\n" +
+  "Atenciosamente,\n[Seu Nome / Empresa]"
+)}`;
+
+const emailAnalise = `mailto:${emailTo}?subject=${encodeURIComponent("Orçamento - Análise Química / Espectrometria")}&body=${encodeURIComponent(
+  "Olá equipe Fundição Domínio,\n\nGostaria de solicitar uma cotação para análises químicas laboratoriais e espectrometria de ligas.\n\n" +
+  "Seguem detalhes preliminares:\n" +
+  "- Tipo de liga/amostra:\n" +
+  "- Quantidade de amostras/corpos de prova:\n" +
+  "- Necessita de certificado assinado por técnico? (Sim/Não):\n\n" +
+  "Atenciosamente,\n[Seu Nome / Empresa]"
+)}`;
+
+const mapsEmbedSrc = "https://www.google.com/maps?q=Rua+Saudade,+30+-+Vila+Industrial+II,+Quintana+-+SP,+17674-228&t=k&z=18&output=embed";
+
+const MODALITIES = [
+  {
+    index: "01",
+    label: "Molde Existente",
+    icon: Layers,
+    tagline: "Já tem o ferramental",
+    desc: "Para quem já possui moldes de madeira, resina ou alumínio e busca agilidade na produção.",
+    checklist: [
+      "Dimensões e material do ferramental",
+      "Fotos nítidas do molde e peças fundidas",
+      "Peso aproximado da peça final",
+      "Liga metálica desejada",
+    ],
+    whatsapp: `https://wa.me/${whatsappNumber}`,
+    email: emailMolde,
+  },
+  {
+    index: "02",
+    label: "Desenvolvimento Completo",
+    icon: Cpu,
+    tagline: "Do esboço à peça",
+    desc: "Nossa engenharia desenvolve a modelagem 3D e fabricação do ferramental do zero.",
+    checklist: [
+      "Desenho técnico 2D (PDF) ou 3D (STEP/IGS)",
+      "Amostra física ou croqui",
+      "Função mecânica da peça",
+      "Volume anual estimado",
+    ],
+    whatsapp: `https://wa.me/${whatsappNumber}`,
+    email: emailDesenvolvimento,
+  },
+  {
+    index: "03",
+    label: "Análise Química",
+    icon: FlaskConical,
+    tagline: "Espectrometria de ligas",
+    desc: "Ensaio laboratorial por emissão óptica. Composição química certificada de qualquer liga metálica.",
+    checklist: [
+      "Tipo de liga (ferrosa ou não-ferrosa)",
+      "Quantidade de amostras",
+      "Necessidade de laudo técnico assinado",
+    ],
+    whatsapp: `https://wa.me/${whatsappNumber}`,
+    email: emailAnalise,
+  },
+];
+
 const Orcamento = () => {
   const sectionRef = useRef<HTMLElement>(null);
-  const whatsappNumber = "5514991790555";
-  const emailTo = "contato@fundicaodominio.com.br";
+  const [activeModal, setActiveModal] = useState(0);
+  const [hovered, setHovered] = useState<number | null>(null);
+  const progressRef = useRef<HTMLDivElement>(null);
 
-  const emailMolde = `mailto:${emailTo}?subject=${encodeURIComponent("Orçamento - Fundição com Molde Existente")}&body=${encodeURIComponent(
-    "Olá equipe Fundição Domínio,\n\nGostaria de solicitar um orçamento de fundição para peças utilizando ferramental/molde já existente.\n\n" +
-    "Seguem detalhes preliminares:\n" +
-    "- Tipo/Material do molde (Madeira, Alumínio, Resina, etc):\n" +
-    "- Peso aproximado da peça:\n" +
-    "- Liga metálica desejada:\n" +
-    "- Demanda estimada:\n\n" +
-    "[Se possível, anexe fotos do molde e das peças para nos ajudar no orçamento]\n\n" +
-    "Atenciosamente,\n[Seu Nome / Empresa]"
-  )}`;
+  const displayed = hovered !== null ? hovered : activeModal;
 
-  const emailDesenvolvimento = `mailto:${emailTo}?subject=${encodeURIComponent("Orçamento - Desenvolvimento Completo de Peça")}&body=${encodeURIComponent(
-    "Olá equipe Fundição Domínio,\n\nGostaria de solicitar o desenvolvimento completo de um novo projeto de fundição.\n\n" +
-    "Seguem detalhes preliminares:\n" +
-    "- Possuo desenho técnico (2D/3D) ou Amostra física:\n" +
-    "- Liga metálica desejada (se souber):\n" +
-    "- Aplicação/função da peça:\n" +
-    "- Demanda anual estimada:\n\n" +
-    "[Se possível, anexe desenhos técnicos, fotos ou especificações técnicas]\n\n" +
-    "Atenciosamente,\n[Seu Nome / Empresa]"
-  )}`;
+  // Animate progress bar
+  useEffect(() => {
+    const el = progressRef.current;
+    if (!el) return;
+    gsap.to(el, {
+      width: `${((displayed + 1) / MODALITIES.length) * 100}%`,
+      duration: 0.35,
+      ease: "power2.out",
+    });
+  }, [displayed]);
 
-  const emailAnalise = `mailto:${emailTo}?subject=${encodeURIComponent("Orçamento - Análise Química / Espectrometria")}&body=${encodeURIComponent(
-    "Olá equipe Fundição Domínio,\n\nGostaria de solicitar uma cotação para análises químicas laboratoriais e espectrometria de ligas.\n\n" +
-    "Seguem detalhes preliminares:\n" +
-    "- Tipo de liga/amostra:\n" +
-    "- Quantidade de amostras/corpos de prova:\n" +
-    "- Necessita de certificado assinado por técnico? (Sim/Não):\n\n" +
-    "Atenciosamente,\n[Seu Nome / Empresa]"
-  )}`;
-
-  const mapsEmbedSrc = "https://www.google.com/maps?q=Rua+Saudade,+30+-+Vila+Industrial+II,+Quintana+-+SP,+17674-228&t=k&z=18&output=embed";
-
-  const cardsData = [
-    {
-      number: "01",
-      title: "Molde Existente",
-      description: "Para quem já possui o ferramental (moldes de madeira, resina ou alumínio) e busca agilidade na produção e fundição das peças.",
-      icon: Layers,
-      requirements: [
-        "Dimensões e material do ferramental",
-        "Fotos nítidas do molde e de peças fundidas",
-        "Peso aproximado da peça final",
-        "Liga metálica desejada (ou aplicação)",
-      ],
-      whatsappLink: `https://wa.me/${whatsappNumber}`,
-      emailLink: emailMolde,
-    },
-    {
-      number: "02",
-      title: "Desenvolvimento Completo",
-      description: "Do esboço à peça finalizada. Nossa equipe de engenharia desenvolve a modelagem 3D e fabricação do ferramental.",
-      icon: Cpu,
-      requirements: [
-        "Desenho técnico 2D (PDF) ou 3D (STEP/IGS)",
-        "Amostra física (se possuir) ou croqui",
-        "Esclarecimento da função mecânica da peça",
-        "Estimativa de volume anual necessário",
-      ],
-      whatsappLink: `https://wa.me/${whatsappNumber}`,
-      emailLink: emailDesenvolvimento,
-    },
-    {
-      number: "03",
-      title: "Análise Química de Metal",
-      description: "Serviço laboratorial de espectrometria por emissão óptica para atestar a composição química e emitir certificados de ligas metálicas.",
-      icon: FlaskConical,
-      requirements: [
-        "Tipo de liga metálica (ferrosa ou não-ferrosa)",
-        "Quantidade de amostras para o ensaio",
-        "Informação se exige laudo técnico assinado",
-      ],
-      whatsappLink: `https://wa.me/${whatsappNumber}`,
-      emailLink: emailAnalise,
-    },
-  ];
-
-  // GSAP animations
+  // Entrance animations
   useEffect(() => {
     const el = sectionRef.current;
     if (!el) return;
-
     const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (prefersReduced) return;
 
     const ctx = gsap.context(() => {
-      // Header
-      gsap.from(".orc-header", {
-        opacity: 0,
-        y: 30,
-        duration: 0.7,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: ".orc-header",
-          start: "top 85%",
-          toggleActions: "play none none none",
-        },
+      // Header words
+      gsap.fromTo(".orc-word", { opacity: 0, y: 40 }, {
+        opacity: 1, y: 0, stagger: 0.07, duration: 0.8, ease: "power3.out",
+        scrollTrigger: { trigger: ".orc-header", start: "top 85%", toggleActions: "play none none none" },
       });
 
-      // Cards stagger
-      gsap.from(".orc-card", {
-        opacity: 0,
-        y: 40,
-        stagger: 0.15,
-        duration: 0.6,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: ".orc-cards",
-          start: "top 80%",
-          toggleActions: "play none none none",
-        },
+      // Selector tabs
+      gsap.fromTo(".orc-tab", { opacity: 0, x: -20 }, {
+        opacity: 1, x: 0, stagger: 0.1, duration: 0.6, ease: "power3.out",
+        scrollTrigger: { trigger: ".orc-tabs", start: "top 85%", toggleActions: "play none none none" },
       });
 
-      // Map section
-      gsap.from(".orc-map", {
-        opacity: 0,
-        y: 30,
-        duration: 0.7,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: ".orc-map",
-          start: "top 85%",
-          toggleActions: "play none none none",
-        },
+      // Panel
+      gsap.fromTo(".orc-panel", { opacity: 0, y: 30 }, {
+        opacity: 1, y: 0, duration: 0.7, ease: "power3.out",
+        scrollTrigger: { trigger: ".orc-panel", start: "top 85%", toggleActions: "play none none none" },
+      });
+
+      // Map
+      gsap.fromTo(".orc-map", { opacity: 0, y: 30 }, {
+        opacity: 1, y: 0, duration: 0.7, ease: "power3.out",
+        scrollTrigger: { trigger: ".orc-map", start: "top 85%", toggleActions: "play none none none" },
       });
     }, el);
 
     return () => ctx.revert();
   }, []);
 
-  return (
-    <section ref={sectionRef} className="relative py-12 sm:py-24 bg-background overflow-hidden min-h-screen pt-24 sm:pt-32">
-        {/* Background atmosphere */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full bg-accent/3 blur-[120px]" />
-          <div className="absolute -bottom-32 -right-32 w-[500px] h-[500px] rounded-full bg-molten/3 blur-[120px]" />
-        </div>
-        <MoltenParticles density="low" />
+  const mod = MODALITIES[displayed];
+  const Icon = mod.icon;
 
-        <div className="relative section-container">
-          {/* Header */}
-          <div className="orc-header text-center mb-12 sm:mb-16">
-            <div className="badge-accent mb-4">
-              <Flame size={14} />
-              Agilidade & Precisão
+  return (
+    <section
+      ref={sectionRef}
+      className="relative min-h-screen overflow-hidden pt-24 sm:pt-32 pb-20 sm:pb-28"
+      style={{
+        background:
+          "radial-gradient(ellipse at 20% 10%, hsl(25 95% 50% / 0.05) 0%, transparent 45%), hsl(30 15% 7%)",
+      }}
+    >
+      {/* Grid texture */}
+      <div className="absolute inset-0 bg-grid opacity-15 pointer-events-none" />
+      <MoltenParticles density="low" />
+
+      {/* Forge glow top-left */}
+      <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-accent/4 blur-[140px] pointer-events-none" />
+
+      <div className="relative section-container">
+
+        {/* ── Header ─────────────────────────────────────────────────── */}
+        <div className="orc-header mb-16 sm:mb-20">
+          <p className="orc-word font-mono text-[10px] uppercase tracking-[0.45em] text-accent/60 mb-5 opacity-0">
+            // Solicitar Orçamento
+          </p>
+
+          <div className="flex flex-wrap gap-x-4 gap-y-0 mb-6">
+            {["Entre", "em", "contato."].map((w, i) => (
+              <span
+                key={i}
+                className={`orc-word opacity-0 font-heading font-black uppercase leading-[0.88] text-4xl sm:text-6xl md:text-7xl ${
+                  w === "contato." ? "text-gradient-molten" : "text-foreground"
+                }`}
+              >
+                {w}
+              </span>
+            ))}
+          </div>
+
+          <p className="orc-word opacity-0 text-foreground/45 text-sm sm:text-base max-w-lg leading-relaxed">
+            Escolha a modalidade que se encaixa no seu projeto e abra um canal direto com nossa engenharia.
+          </p>
+        </div>
+
+        {/* ── Main Layout ─────────────────────────────────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 lg:gap-10 mb-20 sm:mb-28">
+
+          {/* Tabs — vertical selector */}
+          <div className="orc-tabs flex flex-row lg:flex-col gap-1 overflow-x-auto lg:overflow-x-visible pb-2 lg:pb-0">
+            {/* Progress bar — desktop only */}
+            <div className="hidden lg:block h-px bg-border/20 mb-5 relative overflow-hidden">
+              <div
+                ref={progressRef}
+                className="absolute left-0 top-0 h-full"
+                style={{
+                  width: `${((displayed + 1) / MODALITIES.length) * 100}%`,
+                  background: "linear-gradient(to right, hsl(20 100% 55%), hsl(25 95% 50%))",
+                }}
+              />
             </div>
-            <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold uppercase tracking-tight mb-3 sm:mb-4">
-              Solicite seu <span className="text-gradient-molten">Orçamento</span>
-            </h1>
-            <div className="w-20 h-[2px] gradient-molten mx-auto mb-6" />
-            <p className="text-sm sm:text-base md:text-lg text-foreground/55 max-w-3xl mx-auto leading-relaxed">
-              Escolha a modalidade de orçamento que melhor atende a sua necessidade para abrir o canal
-              direto com nossa engenharia ou atendimento comercial.
+
+            {MODALITIES.map((m, i) => {
+              const isActive = displayed === i;
+              return (
+                <button
+                  key={i}
+                  className={`orc-tab opacity-0 shrink-0 lg:shrink text-left px-4 py-3 lg:py-4 flex items-center gap-3 lg:gap-4 transition-all duration-300 border-b lg:border-b-0 lg:border-l-2 ${
+                    isActive
+                      ? "border-accent text-foreground"
+                      : "border-border/20 text-foreground/35 hover:text-foreground/65 hover:border-border/50"
+                  }`}
+                  onClick={() => { setActiveModal(i); setHovered(null); }}
+                  onMouseEnter={() => setHovered(i)}
+                  onMouseLeave={() => setHovered(null)}
+                >
+                  <span className={`font-mono text-[9px] shrink-0 transition-colors ${isActive ? "text-accent" : "text-foreground/20"}`}>
+                    {m.index}
+                  </span>
+                  <div className="min-w-0">
+                    <div className="font-heading font-bold uppercase text-sm tracking-tight whitespace-nowrap">
+                      {m.label}
+                    </div>
+                    {isActive && (
+                      <div className="font-mono text-[9px] text-foreground/30 uppercase tracking-widest mt-0.5">
+                        {m.tagline}
+                      </div>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Panel */}
+          <div className="orc-panel opacity-0">
+            {/* Top bar */}
+            <div className="flex items-center gap-4 mb-8">
+              <span
+                className="font-heading font-black text-[80px] sm:text-[100px] leading-none select-none"
+                style={{ color: "transparent", WebkitTextStroke: "1px hsl(25 95% 50% / 0.2)" }}
+              >
+                {mod.index}
+              </span>
+              <div>
+                <p className="font-mono text-[9px] uppercase tracking-[0.35em] text-accent/60 mb-1">{mod.tagline}</p>
+                <h2 className="font-heading font-black uppercase text-2xl sm:text-3xl leading-none text-foreground">
+                  {mod.label}
+                </h2>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
+              {/* Left: description + CTA */}
+              <div className="flex flex-col">
+                <p className="text-foreground/55 text-sm sm:text-base leading-relaxed mb-8">
+                  {mod.desc}
+                </p>
+
+                {/* CTA buttons */}
+                <div className="flex flex-col sm:flex-row gap-3 mt-auto">
+                  <a
+                    href={mod.whatsapp}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group relative overflow-hidden flex items-center justify-center gap-2 px-6 py-3.5 font-heading font-bold uppercase tracking-[0.12em] text-sm text-accent-foreground transition-all duration-300 hover:scale-[1.02]"
+                    style={{
+                      background: "linear-gradient(135deg, hsl(20 100% 55%), hsl(25 95% 50%))",
+                      clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))",
+                    }}
+                  >
+                    <MessageCircle size={15} />
+                    WhatsApp
+                    <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors duration-300" />
+                  </a>
+
+                  <a
+                    href={mod.email}
+                    className="group flex items-center justify-center gap-2 px-6 py-3.5 font-heading font-bold uppercase tracking-[0.12em] text-sm text-foreground/65 hover:text-accent transition-all duration-300"
+                    style={{
+                      border: "1px solid hsl(30 12% 25% / 0.5)",
+                      clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))",
+                    }}
+                  >
+                    <Mail size={15} />
+                    E-mail
+                    <span className="absolute bottom-[9px] left-8 right-8 h-px bg-accent scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left hidden" />
+                  </a>
+                </div>
+              </div>
+
+              {/* Right: checklist */}
+              <div>
+                <p className="font-mono text-[9px] uppercase tracking-[0.35em] text-foreground/25 mb-5">
+                  // O que nos enviar
+                </p>
+
+                <div className="flex flex-col divide-y divide-border/15">
+                  {mod.checklist.map((item, i) => (
+                    <div
+                      key={i}
+                      className="flex items-start gap-4 py-3.5 group/item"
+                    >
+                      <div className="flex items-center gap-3 flex-1">
+                        <span className="font-mono text-[9px] text-foreground/20 shrink-0 w-4">
+                          {String(i + 1).padStart(2, "0")}
+                        </span>
+                        <div
+                          className="w-1.5 h-1.5 rounded-full bg-accent/50 shrink-0 mt-0.5"
+                        />
+                        <span className="text-sm text-foreground/60 leading-snug group-hover/item:text-foreground/85 transition-colors duration-200">
+                          {item}
+                        </span>
+                      </div>
+                      <Check size={13} className="text-accent/50 shrink-0 mt-0.5" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Divider ─────────────────────────────────────────────────── */}
+        <div className="divider-molten opacity-25 mb-20 sm:mb-24" />
+
+        {/* ── Map Section ─────────────────────────────────────────────── */}
+        <div className="orc-map opacity-0">
+          <div className="mb-8">
+            <p className="font-mono text-[10px] uppercase tracking-[0.4em] text-accent/60 mb-4">
+              // Localização
+            </p>
+            <h2 className="font-heading font-black uppercase text-2xl sm:text-3xl leading-none text-foreground mb-2">
+              Onde nos <span className="text-gradient-molten">encontrar</span>
+            </h2>
+            <p className="text-sm text-foreground/40 max-w-md">
+              Venha nos visitar ou envie suas amostras e moldes ao nosso endereço.
             </p>
           </div>
 
-          {/* Cards Layout */}
-          <div className="orc-cards max-w-5xl mx-auto mb-16 sm:mb-24">
+          <a
+            href="https://maps.app.goo.gl/r6YhFjSyr3NoCjrT8"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group block relative overflow-hidden h-[260px] sm:h-[380px] md:h-[480px]"
+            style={{
+              border: "1px solid hsl(30 12% 18% / 0.6)",
+              clipPath: "polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px))",
+            }}
+            aria-label="Abrir localização no Google Maps"
+          >
+            <iframe
+              title="Localização Fundição Domínio - Quintana, SP"
+              src={mapsEmbedSrc}
+              className="w-full h-full border-0 grayscale-[30%] contrast-110 group-hover:grayscale-0 transition-all duration-700"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              allowFullScreen
+            />
 
-            {/* Card 01 — Full width */}
-            {(() => {
-              const card = cardsData[0];
-              const Icon = card.icon;
-              return (
-                <div className="orc-card glass-dark edge-glow rounded-xl p-6 sm:p-8 mb-4 group hover:-translate-y-1 transition-all duration-300 hover:shadow-[0_20px_40px_-15px_rgba(255,120,30,0.1)]">
-                  <div className="flex flex-col lg:flex-row gap-8">
-                    <div className="lg:w-2/5 flex flex-col">
-                      <div className="flex items-center gap-4 mb-5">
-                        <span className="text-6xl sm:text-7xl font-heading font-bold text-transparent select-none leading-none" style={{ WebkitTextStroke: "1px hsl(var(--accent) / 0.2)" }}>
-                          {card.number}
-                        </span>
-                        <div className="w-11 h-11 rounded-lg gradient-molten flex items-center justify-center shadow-lg shadow-accent/15">
-                          <Icon className="w-5 h-5 text-accent-foreground" />
-                        </div>
-                      </div>
-                      <h2 className="font-heading text-2xl sm:text-3xl font-bold uppercase tracking-tight text-foreground mb-3">
-                        {card.title}
-                      </h2>
-                      <p className="text-sm text-foreground/50 leading-relaxed mb-6 flex-grow">
-                        {card.description}
-                      </p>
-                      <div className="flex flex-col sm:flex-row gap-3">
-                        <a
-                          href={card.whatsappLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="gradient-molten text-accent-foreground px-5 py-3 rounded-md font-semibold text-xs tracking-wider uppercase transition-all duration-300 hover:opacity-90 hover:scale-[1.02] flex items-center justify-center gap-2 shadow-md shadow-accent/10"
-                        >
-                          <MessageCircle size={15} />
-                          WhatsApp
-                        </a>
-                        <a
-                          href={card.emailLink}
-                          className="border border-border/50 hover:border-accent/30 bg-background/20 hover:bg-background/40 text-foreground px-5 py-3 rounded-md font-semibold text-xs tracking-wider uppercase transition-all duration-300 flex items-center justify-center gap-2"
-                        >
-                          <Mail size={15} />
-                          E-mail
-                        </a>
-                      </div>
-                    </div>
-
-                    <div className="hidden lg:block w-px bg-border/20 self-stretch" />
-
-                    <div className="lg:flex-1">
-                      <p className="label-tech text-accent mb-5">
-                        O que nos enviar:
-                      </p>
-                      <ul className="space-y-4">
-                        {card.requirements.map((req, rIdx) => (
-                          <li key={rIdx} className="flex items-start gap-3 text-sm text-foreground/70">
-                            <Check size={16} className="text-accent flex-shrink-0 mt-0.5" />
-                            <span>{req}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* Cards 02 and 03 */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {cardsData.slice(1).map((card) => {
-                const Icon = card.icon;
-                return (
-                  <div
-                    key={card.number}
-                    className="orc-card glass-dark edge-glow rounded-xl p-6 sm:p-7 flex flex-col group hover:-translate-y-1 transition-all duration-300 hover:shadow-[0_20px_40px_-15px_rgba(255,120,30,0.08)]"
-                  >
-                    <div className="flex items-center gap-3 mb-5">
-                      <span className="text-5xl font-heading font-bold text-transparent select-none leading-none" style={{ WebkitTextStroke: "1px hsl(var(--accent) / 0.2)" }}>
-                        {card.number}
-                      </span>
-                      <div className="w-10 h-10 rounded-lg gradient-molten flex items-center justify-center shadow-lg shadow-accent/15">
-                        <Icon className="w-5 h-5 text-accent-foreground" />
-                      </div>
-                    </div>
-
-                    <h3 className="font-heading text-xl font-bold uppercase tracking-tight text-foreground mb-2">
-                      {card.title}
-                    </h3>
-                    <p className="text-sm text-foreground/50 leading-relaxed mb-5 flex-grow">
-                      {card.description}
-                    </p>
-
-                    <div className="border-t border-border/20 pt-5 mb-5">
-                      <p className="label-tech text-accent mb-4">
-                        O que nos enviar:
-                      </p>
-                      <ul className="space-y-3">
-                        {card.requirements.map((req, rIdx) => (
-                          <li key={rIdx} className="flex items-start gap-2.5 text-xs text-foreground/65">
-                            <Check size={14} className="text-accent flex-shrink-0 mt-0.5" />
-                            <span>{req}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    <div className="flex flex-col gap-2.5 mt-auto">
-                      <a
-                        href={card.whatsappLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="gradient-molten text-accent-foreground px-4 py-2.5 rounded-md font-semibold text-xs tracking-wider uppercase transition-all duration-300 hover:opacity-90 flex items-center justify-center gap-2 shadow-md shadow-accent/10"
-                      >
-                        <MessageCircle size={14} />
-                        WhatsApp
-                      </a>
-                      <a
-                        href={card.emailLink}
-                        className="border border-border/50 hover:border-accent/30 bg-background/20 hover:bg-background/40 text-foreground px-4 py-2.5 rounded-md font-semibold text-xs tracking-wider uppercase transition-all duration-300 flex items-center justify-center gap-2"
-                      >
-                        <Mail size={14} />
-                        E-mail
-                      </a>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Map Section */}
-          <div className="orc-map max-w-5xl mx-auto px-4 sm:px-0">
-            <div className="text-center mb-8">
-              <h2 className="font-heading text-xl sm:text-2xl md:text-3xl font-bold uppercase tracking-tight text-foreground mb-2">
-                Onde pode nos <span className="text-gradient-molten">Encontrar?</span>
-              </h2>
-              <p className="text-sm text-foreground/50 max-w-xl mx-auto">
-                Venha nos visitar ou faça o envio de suas amostras e moldes diretamente ao nosso endereço físico.
-              </p>
-            </div>
-
-            <a
-              href="https://maps.app.goo.gl/r6YhFjSyr3NoCjrT8"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group block relative rounded-xl overflow-hidden border border-border/40 hover:border-accent/40 transition-all duration-500 shadow-2xl shadow-background/50 hover:shadow-accent/5 h-[260px] sm:h-[380px] md:h-[480px]"
-              aria-label="Abrir localização no Google Maps"
-            >
-              <iframe
-                title="Localização Fundição Domínio - Quintana, SP"
-                src={mapsEmbedSrc}
-                className="w-full h-full border-0 grayscale-[20%] contrast-110 group-hover:grayscale-0 transition-all duration-500"
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                allowFullScreen
-              />
-              <div className="pointer-events-none absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background/95 via-background/70 to-transparent p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                <div className="w-11 h-11 rounded-lg gradient-molten flex items-center justify-center flex-shrink-0">
-                  <MapPin size={20} className="text-accent-foreground" />
+            {/* Bottom overlay */}
+            <div className="pointer-events-none absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background/95 via-background/60 to-transparent p-5 sm:p-7 flex items-end justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div
+                  className="w-9 h-9 flex items-center justify-center shrink-0"
+                  style={{
+                    background: "linear-gradient(135deg, hsl(20 100% 55%), hsl(25 95% 50%))",
+                    clipPath: "polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px))",
+                  }}
+                >
+                  <MapPin size={17} className="text-accent-foreground" />
                 </div>
                 <div>
-                  <p className="label-tech text-accent mb-1">Endereço</p>
-                  <p className="text-sm md:text-base text-foreground/80 leading-tight">
-                    Rua Saudade, 30 - Vila Industrial II, Quintana - SP, CEP 17674-228
+                  <p className="font-mono text-[9px] uppercase tracking-[0.3em] text-accent/70 mb-0.5">Endereço</p>
+                  <p className="text-sm text-foreground/75 leading-tight">
+                    Rua Saudade, 30 · Vila Industrial II · Quintana-SP · 17674-228
                   </p>
                 </div>
               </div>
-            </a>
-          </div>
+
+              <div className="hidden sm:flex items-center gap-2 text-foreground/30 group-hover:text-accent transition-colors duration-300 shrink-0">
+                <span className="font-mono text-[9px] uppercase tracking-widest">Abrir no Maps</span>
+                <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
+              </div>
+            </div>
+
+            {/* Corner markers */}
+            <div className="absolute top-3 left-3 w-5 h-5 border-t border-l border-accent/30 pointer-events-none" />
+            <div className="absolute top-3 right-3 w-5 h-5 border-t border-r border-foreground/10 pointer-events-none" />
+          </a>
         </div>
-      </section>
+      </div>
+    </section>
   );
 };
 

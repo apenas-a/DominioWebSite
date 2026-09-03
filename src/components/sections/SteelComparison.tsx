@@ -60,8 +60,16 @@ const SteelComparison = () => {
   }, []);
 
   return (
-    <section className="py-16 sm:py-24 bg-background relative overflow-hidden border-t border-border/50" ref={containerRef}>
-      <div className="section-container">
+    <section
+      className="py-16 sm:py-24 relative overflow-hidden"
+      ref={containerRef}
+      style={{
+        background:
+          "radial-gradient(ellipse at 50% 0%, hsl(20 100% 55% / 0.04) 0%, transparent 50%), linear-gradient(180deg, hsl(30 15% 7%) 0%, hsl(30 12% 5%) 60%, hsl(30 15% 7%) 100%)",
+      }}
+    >
+      <div className="absolute inset-0 bg-grid opacity-15 pointer-events-none" />
+      <div className="section-container relative z-10">
         <div className="compare-header text-center mb-12 sm:mb-16">
           <h2 className="font-heading text-2xl sm:text-4xl font-bold uppercase tracking-tight mb-3 sm:mb-4">
             Comparativo <span className="text-gradient-molten">Técnico dos Aços</span>

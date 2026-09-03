@@ -4,22 +4,22 @@ import * as THREE from 'three';
 import { castingState, lerp, smoothstep } from '@/components/casting/CastingTimeline';
 
 const KEYFRAMES = [
-  { p: 0.00, pos: [7, 5, 8],    target: [0, 0.5, 0] },
-  { p: 0.04, pos: [6, 5, 7],    target: [0, 0.8, 0] },
-  { p: 0.10, pos: [5.5, 4.5, 6.5], target: [0, 0.6, 0] },
-  { p: 0.17, pos: [5, 4, 7],    target: [0, 1.0, 0] },
-  { p: 0.23, pos: [5, 5, 7],    target: [0, 1.5, 0] },
-  { p: 0.30, pos: [4, 4, 6],    target: [0, 1.2, 0] },
-  { p: 0.38, pos: [4, 3.5, 6],  target: [-0.5, 1.5, 0] },
-  { p: 0.46, pos: [5, 4, 7],    target: [0.5, 1.0, 0] },
-  { p: 0.54, pos: [6, 5, 8],    target: [0, 1.2, 0] },
-  { p: 0.63, pos: [4.5, 4, 6],  target: [0, 1.8, 0] },
-  { p: 0.71, pos: [5, 4, 7],    target: [0, 0.5, 0] },
-  { p: 0.78, pos: [5, 4, 7],    target: [0, 0.5, 0] },
-  { p: 0.85, pos: [6, 5, 7],    target: [0, 0.8, 0] },
-  { p: 0.92, pos: [4.5, 3, 5],  target: [0, 0.5, 0] },
-  { p: 0.96, pos: [5, 3, 5.5],  target: [2, 1.2, 0] },
-  { p: 1.00, pos: [4.5, 2.5, 5], target: [3, 1.5, 0] },
+  { p: 0.00, pos: [5.5, 6.5, 6.5],  target: [0, 0.6, 0] },   // Stage 01 — looking down at open mold
+  { p: 0.04, pos: [4.5, 5.5, 6.0],  target: [0, 0.8, 0] },   // slight push in
+  { p: 0.10, pos: [4.5, 4.5, 6.0],  target: [0, 0.6, 0] },   // close start
+  { p: 0.17, pos: [5, 4.5, 7],      target: [0, 1.2, 0] },
+  { p: 0.23, pos: [4.2, 5.2, 6.2],  target: [-0.2, 1.4, 0] }, // Stage 04: clear overhead view into hollow furnace
+  { p: 0.30, pos: [4.0, 4.6, 5.8],  target: [-0.1, 1.4, 0] }, // Stage 05: smooth view of rising molten metal
+  { p: 0.38, pos: [4.2, 3.8, 6.0],  target: [0.2, 1.3, 0] },  // Stage 06: tilt view showing both furnace and ladle
+  { p: 0.46, pos: [4.5, 3.4, 5.8],  target: [0.5, 1.1, 0] },  // Stage 07: pouring stream into ladle
+  { p: 0.54, pos: [6, 5, 8],        target: [0, 1.2, 0] },
+  { p: 0.63, pos: [4.5, 4, 6],      target: [0, 1.8, 0] },
+  { p: 0.71, pos: [5, 4, 7],        target: [0, 0.5, 0] },
+  { p: 0.78, pos: [5, 4, 7],        target: [0, 0.5, 0] },
+  { p: 0.85, pos: [5.5, 5.5, 6.5],  target: [0, 0.8, 0] },   // mold open reveal
+  { p: 0.92, pos: [4.5, 3, 5],      target: [0, 0.5, 0] },
+  { p: 0.96, pos: [5, 3, 5.5],      target: [2, 1.2, 0] },
+  { p: 1.00, pos: [4.5, 2.5, 5],    target: [3, 1.5, 0] },
 ];
 
 export default function CameraRig() {
