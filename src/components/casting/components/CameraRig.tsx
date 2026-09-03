@@ -12,8 +12,8 @@ const KEYFRAMES = [
   { p: 0.30, pos: [4.0, 4.6, 5.8],  target: [-0.1, 1.4, 0] }, // Stage 05: smooth view of rising molten metal
   { p: 0.38, pos: [4.2, 3.8, 6.0],  target: [0.2, 1.3, 0] },  // Stage 06: tilt view showing both furnace and ladle
   { p: 0.46, pos: [4.5, 3.4, 5.8],  target: [0.5, 1.1, 0] },  // Stage 07: pouring stream into ladle
-  { p: 0.54, pos: [6, 5, 8],        target: [0, 1.2, 0] },
-  { p: 0.63, pos: [4.5, 4, 6],      target: [0, 1.8, 0] },
+  { p: 0.55, pos: [5.0, 4.2, 6.0],  target: [0.7, 2.2, 0] },  // Stage 08: panela sobre o molde (sprue at X=1.0)
+  { p: 0.63, pos: [4.6, 3.8, 5.8],  target: [0.8, 2.2, 0] },  // Stage 09: vazamento no molde (sprue at X=1.0)
   { p: 0.71, pos: [5, 4, 7],        target: [0, 0.5, 0] },
   { p: 0.78, pos: [5, 4, 7],        target: [0, 0.5, 0] },
   { p: 0.85, pos: [5.5, 5.5, 6.5],  target: [0, 0.8, 0] },   // mold open reveal

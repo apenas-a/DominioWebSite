@@ -1,4 +1,4 @@
-import React, { useRef, useMemo } from 'react';
+import React, { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import {
@@ -12,31 +12,95 @@ import { usePourPoints } from '@/components/casting/CastingContext';
 import { moltenSurfaceShader } from '@/components/casting/shaders/moltenShaders';
 
 /* ─────────────────────────────────────────────────────────────
-   Industrial Pouring Ladle (Panela de Vazamento)
+   Industrial Pouring Ladle (Panela Cônica de Vazamento)
    
-   Design requirements:
-   1. Hollow conical vessel with dark refractory interior and
-      well-defined top mouth rim and pouring lip.
-   2. Present and centered directly below the furnace spout:
-      Arrives by p=0.33 so it is already waiting during tilt (0.34-0.42)
-      and centered below the pour stream (0.42-0.50).
-   3. Molten metal filling: The liquid metal rises smoothly inside
-      the ladle as it receives the stream (p=0.42 -> 0.50).
-   4. High incandescence: Intense glowing core point light casting
-      heat on the environment and ladle body.
-   5. Transport to mold (0.50-0.58) and mold pour (0.58-0.68).
+   Correções de Geometria Dinâmica & Colisão:
+   1. Malha líquida cônica adaptativa: Expande-se radialmente de
+      acordo com a inclinação exata das paredes internas cônicas,
+      sem interpenetrar a base ou as paredes.
+   2. Menisco líquido côncavo no topo: Superfície fluida côncava
+      realista, em vez de tampa plana.
+   3. Alinhamento exato no molde: Na etapa "Panela sobre o Molde"
+      (Stage 08), a base e o foco de luz incandescente alinham-se
+      com precisão milimétrica sobre o canal de alimentação (sprue)
+      em X = 1.0.
+   4. Sem colisão com o forno: A panela aguarda o forno retornar à
+      vertical e recuar (p >= 0.51) antes de elevar-se e mover-se.
 ───────────────────────────────────────────────────────────── */
 
 // Dimensions
-const R_TOP = 0.76;
-const R_BOT = 0.56;
+const R_TOP_OUTER = 0.74;
+const R_BOT_OUTER = 0.54;
+const R_TOP_INNER = 0.68;
+const R_BOT_INNER = 0.49;
 const HEIGHT = 1.20;
-const CAVITY_H = 1.05;
-const FLOOR_Y = -HEIGHT / 2 + 0.08;
+const FLOOR_Y = -HEIGHT / 2 + 0.08; // -0.52
+const CAVITY_H = HEIGHT - 0.16;     // 1.04
 
-// Exact receiving position under the furnace spout
-const RECEIVE_X = 0.70;
-const RECEIVE_Y = 0.20; // sits on the floor
+// Locations
+const RECEIVE_X = 0.70;             // Centered below furnace spout
+const RECEIVE_Y = 0.20;             // On the floor
+const MOLD_SPRUE_X = 1.00;          // Exact center of mold sprue funnel
+const MOLD_HOVER_Y = 3.18;          // Base hovers at Y ~ 2.58 directly over sprue mouth (Y = 2.37)
+
+// Profile segment count for LatheGeometry
+const LATHE_SEGMENTS = 24;
+const NUM_PROFILE_POINTS = 6;
+
+// Helper: builds initial conical lathe geometry
+function createInitialLadleLiquidGeometry() {
+  const dummyPoints = [
+    new THREE.Vector2(0, FLOOR_Y),
+    new THREE.Vector2(R_BOT_INNER, FLOOR_Y),
+    new THREE.Vector2(R_BOT_INNER, FLOOR_Y + 0.01),
+    new THREE.Vector2(R_BOT_INNER * 0.68, FLOOR_Y + 0.01),
+    new THREE.Vector2(R_BOT_INNER * 0.32, FLOOR_Y + 0.005),
+    new THREE.Vector2(0, FLOOR_Y),
+  ];
+  return new THREE.LatheGeometry(dummyPoints, LATHE_SEGMENTS);
+}
+
+// Helper: dynamically updates vertex positions to conform to cone slope with concave meniscus
+function updateLadleLiquidGeometry(geom: THREE.BufferGeometry, fillRatio: number) {
+  const f = THREE.MathUtils.clamp(fillRatio, 0.001, 1.0);
+  const yBot = FLOOR_Y + 0.01;
+  const yTop = yBot + f * CAVITY_H;
+  const rBot = R_BOT_INNER;
+  // Radially expands matching the cone wall slope:
+  const rTop = rBot + f * (R_TOP_INNER - rBot);
+  // Concave liquid meniscus dip in center:
+  const meniscus = 0.038 * Math.sqrt(f);
+
+  const profile = [
+    [0, yBot],                             // 0: bottom center
+    [rBot, yBot],                          // 1: bottom corner at refractory floor
+    [rTop, yTop],                          // 2: top meniscus rim touching conical wall
+    [rTop * 0.68, yTop - meniscus * 0.48], // 3: concave meniscus curve
+    [rTop * 0.32, yTop - meniscus * 0.84], // 4: concave meniscus inner dip
+    [0, yTop - meniscus],                  // 5: lowest point of concave meniscus in center
+  ];
+
+  const posAttr = geom.attributes.position as THREE.BufferAttribute;
+  const posArr = posAttr.array as Float32Array;
+
+  for (let j = 0; j <= LATHE_SEGMENTS; j++) {
+    const phi = (j / LATHE_SEGMENTS) * Math.PI * 2;
+    const sinPhi = Math.sin(phi);
+    const cosPhi = Math.cos(phi);
+
+    for (let i = 0; i < NUM_PROFILE_POINTS; i++) {
+      const r = profile[i][0];
+      const y = profile[i][1];
+      const idx = (j * NUM_PROFILE_POINTS + i) * 3;
+      posArr[idx] = r * sinPhi;
+      posArr[idx + 1] = y;
+      posArr[idx + 2] = r * cosPhi;
+    }
+  }
+
+  posAttr.needsUpdate = true;
+  geom.computeVertexNormals();
+}
 
 export default function PouringLadle({ debugFlow = false }: { debugFlow?: boolean }) {
   const ladlePivotRef = useRef<THREE.Group>(null);
@@ -44,6 +108,7 @@ export default function PouringLadle({ debugFlow = false }: { debugFlow?: boolea
   const spoutMarkerRef = useRef<THREE.Mesh>(null);
   const fillMarkerRef = useRef<THREE.Mesh>(null);
   const ladleLightRef = useRef<THREE.PointLight>(null);
+  const sprueFocusLightRef = useRef<THREE.PointLight>(null);
   const pourPoints = usePourPoints();
 
   // ── Molten Metal Shader ─────────────────────────────────────
@@ -60,21 +125,18 @@ export default function PouringLadle({ debugFlow = false }: { debugFlow?: boolea
 
   // ── Materials ────────────────────────────────────────────────
   const { bodyMat, refractoryMat, rimMat } = useMemo(() => ({
-    // Industrial steel shell
     bodyMat: new THREE.MeshStandardMaterial({
       color: '#1e2129',
       roughness: 0.60,
       metalness: 0.85,
       side: THREE.FrontSide,
     }),
-    // Refractory lining inside ladle
     refractoryMat: new THREE.MeshStandardMaterial({
       color: '#181512',
       roughness: 0.96,
       metalness: 0.04,
       side: THREE.BackSide,
     }),
-    // Heavy rim and trunnion mounting
     rimMat: new THREE.MeshStandardMaterial({
       color: '#282d38',
       roughness: 0.40,
@@ -82,30 +144,22 @@ export default function PouringLadle({ debugFlow = false }: { debugFlow?: boolea
     }),
   }), []);
 
-  // ── Pre-build Geometry for Metal Fill (anchored at base) ─────
-  const metalGeom = useMemo(() => {
-    const geom = new THREE.CylinderGeometry(
-      R_TOP - 0.04,
-      R_BOT - 0.04,
-      CAVITY_H,
-      32,
-      1
-    );
-    geom.translate(0, CAVITY_H / 2, 0); // Origin at bottom face
-    return geom;
-  }, []);
+  // ── Pre-allocate Dynamic Conical Liquid Geometry ────────────
+  const dynamicLiquidGeom = useMemo(() => createInitialLadleLiquidGeometry(), []);
 
   // ── Scroll Animation Loop ───────────────────────────────────
   useFrame(({ clock }) => {
     const p = castingState.progress;
 
-    // 1. Ladle Position & Trajectory
-    // Stage 01-04 (0.00-0.27): Off-screen (x=20)
-    // Stage 05 (0.27-0.34): Arrives smoothly to RECEIVE_X by p=0.33
-    // Stage 06-07 (0.34-0.50): Stays steady at RECEIVE_X receiving pour
-    // Stage 08 (0.50-0.58): Moves towards mold (x=0.5, y=3.2)
-    // Stage 09 (0.58-0.68): Pours into mold
-    // Stage 10+ (0.68+): Moves away
+    // 1. Ladle Position & Trajectory (Collision-Free Sequence)
+    // • p < 0.28: Off-screen right (X = 20)
+    // • p in [0.28, 0.33]: Enters to RECEIVE_X (0.70) under furnace spout
+    // • p in [0.33, 0.50]: Stationary at RECEIVE_X receiving furnace pour
+    // • p in [0.50, 0.52]: Waits while furnace returns upright and begins exit
+    // • p in [0.52, 0.56]: Lifts up and glides to mold sprue station (X = 1.00, Y = 3.18)
+    // • p in [0.56, 0.58]: Stationary hovering precisely above mold sprue (Stage 08)
+    // • p in [0.58, 0.68]: Tilts and pours into mold sprue (Stage 09)
+    // • p > 0.68: Retreats away
     let posX = 20;
     let posY = RECEIVE_Y;
     let tiltAngle = 0;
@@ -116,65 +170,69 @@ export default function PouringLadle({ debugFlow = false }: { debugFlow?: boolea
       posX = 20;
       posY = RECEIVE_Y;
     } else if (p <= 0.33) {
-      // Slides smoothly into position under furnace spout
       const entryT = (p - 0.28) / (0.33 - 0.28);
       posX = lerp(20, RECEIVE_X, easeOut(entryT));
       posY = RECEIVE_Y;
-    } else if (p <= 0.50) {
-      // Locked directly below furnace spout during tilt and furnace pour
+    } else if (p <= 0.51) {
+      // Stationary receiving furnace pour
       posX = RECEIVE_X;
       posY = RECEIVE_Y;
+    } else if (p <= 0.56) {
+      // Smooth arc travel to mold sprue station (X = 1.00, Y = 3.18)
+      const travelT = easeInOut((p - 0.51) / (0.56 - 0.51));
+      posX = lerp(RECEIVE_X, MOLD_SPRUE_X, travelT);
+      // Lift vertically first, then settle
+      posY = lerp(RECEIVE_Y, MOLD_HOVER_Y, Math.sin(travelT * (Math.PI / 2)));
     } else if (p <= 0.58) {
-      // Moves from furnace area to mold area
-      const travelT = easeInOut(phaseProgress(p, 'LADLE_TO_MOLD'));
-      posX = lerp(RECEIVE_X, 0.45, travelT);
-      posY = lerp(RECEIVE_Y, 3.2, Math.sin(travelT * Math.PI)); // arc movement
+      // Stage 08: Exact precision hover directly over mold sprue
+      posX = MOLD_SPRUE_X;
+      posY = MOLD_HOVER_Y;
     } else if (p <= 0.68) {
-      // Above mold pouring
-      posX = 0.45;
-      posY = 3.2;
-    } else if (p <= 0.72) {
+      // Stage 09: Above mold sprue pouring
+      posX = MOLD_SPRUE_X;
+      posY = MOLD_HOVER_Y;
+    } else if (p <= 0.73) {
       // Exiting scene
-      const exitT = (p - 0.68) / 0.04;
-      posX = lerp(0.45, 20, easeInOut(exitT));
-      posY = 3.2;
+      const exitT = (p - 0.68) / 0.05;
+      posX = lerp(MOLD_SPRUE_X, 22, easeInOut(exitT));
+      posY = MOLD_HOVER_Y;
     } else {
-      posX = 20;
-      posY = 3.2;
+      posX = 22;
+      posY = MOLD_HOVER_Y;
     }
 
-    // 2. Ladle Filling & Emptying
+    // 2. Liquid Metal Level (Filling from furnace, draining into mold)
     if (p < 0.42) {
       fillRatio = 0;
       isVisible = false;
-    } else if (p <= 0.50) {
+    } else if (p <= 0.485) {
       // Fills smoothly as furnace pours into ladle
-      const pourT = phaseProgress(p, 'FURNACE_POUR');
-      fillRatio = THREE.MathUtils.clamp(pourT * 1.02, 0.001, 1.0);
+      const pourT = (p - 0.42) / (0.485 - 0.42);
+      fillRatio = THREE.MathUtils.clamp(pourT * 1.0, 0.001, 1.0);
       isVisible = true;
     } else if (p < 0.58) {
-      // Full during transport
+      // Full during transport and stage 08
       fillRatio = 1.0;
       isVisible = true;
     } else if (p <= 0.68) {
-      // Drains into mold
+      // Drains into mold sprue
       const moldPourT = phaseProgress(p, 'LADLE_POUR');
-      fillRatio = THREE.MathUtils.clamp(1.0 - moldPourT * 0.95, 0.05, 1.0);
+      fillRatio = THREE.MathUtils.clamp(1.0 - moldPourT * 0.95, 0.03, 1.0);
       isVisible = true;
     } else {
       fillRatio = 0;
       isVisible = false;
     }
 
-    // 3. Tilt when pouring into mold (Stage 09: 0.58 -> 0.68)
+    // 3. Ladle Tilt when Pouring into Mold (Stage 09: 0.58 -> 0.68)
     if (p >= 0.58 && p <= 0.68) {
       const moldPourT = phaseProgress(p, 'LADLE_POUR');
-      if (moldPourT < 0.2) {
-        tiltAngle = lerp(0, -0.78, easeInOut(moldPourT / 0.2));
+      if (moldPourT < 0.20) {
+        tiltAngle = lerp(0, -0.76, easeInOut(moldPourT / 0.20));
       } else if (moldPourT < 0.85) {
-        tiltAngle = -0.78;
+        tiltAngle = -0.76;
       } else {
-        tiltAngle = lerp(-0.78, 0, (moldPourT - 0.85) / 0.15);
+        tiltAngle = lerp(-0.76, 0, (moldPourT - 0.85) / 0.15);
       }
     }
 
@@ -183,44 +241,50 @@ export default function PouringLadle({ debugFlow = false }: { debugFlow?: boolea
       ladlePivotRef.current.rotation.z = tiltAngle;
     }
 
-    // 4. Update metal mesh scale and visibility
+    // 4. Update Dynamic Conical Liquid Geometry
     if (metalMeshRef.current) {
       metalMeshRef.current.visible = isVisible;
       if (isVisible) {
-        metalMeshRef.current.scale.set(1, Math.max(0.001, fillRatio), 1);
+        updateLadleLiquidGeometry(dynamicLiquidGeom, fillRatio);
       }
     }
 
-    // 5. Shader uniforms
+    // 5. Shader Uniforms
     if (metalShaderMat.current) {
       metalShaderMat.current.uniforms.uTime.value = clock.getElapsedTime();
       metalShaderMat.current.uniforms.uIntensity.value = isVisible ? 1.0 : 0;
     }
 
-    // 6. Glowing core light
+    // 6. Glowing Lights
+    // Internal liquid core light
     if (ladleLightRef.current) {
-      ladleLightRef.current.intensity = isVisible ? fillRatio * 6.0 : 0;
+      ladleLightRef.current.intensity = isVisible ? fillRatio * 6.5 : 0;
+    }
+    // Downwards sprue focus light at ladle base (highlights sprue funnel directly below)
+    if (sprueFocusLightRef.current) {
+      const isAboveSprue = p >= 0.53 && p <= 0.68;
+      sprueFocusLightRef.current.intensity = isVisible && isAboveSprue ? fillRatio * 7.5 : 0;
     }
 
-    // 7. Update pour tracking points
+    // 7. World-space tracking points
     spoutMarkerRef.current?.getWorldPosition(pourPoints.ladleSpout.current);
     fillMarkerRef.current?.getWorldPosition(pourPoints.ladleFill.current);
   });
 
   return (
     <group ref={ladlePivotRef}>
-      {/* Centered ladle body with pivot near spout for pour */}
-      <group position={[-0.45, -0.45, 0]}>
+      {/* Ladle body centered on origin of ladlePivotRef */}
+      <group position={[0, 0, 0]}>
 
         {/* ═══ 1. OUTER STEEL SHELL (Open-ended truncated cone) ═══ */}
         <mesh material={bodyMat}>
-          <cylinderGeometry args={[R_TOP, R_BOT, HEIGHT, 36, 1, true]} />
+          <cylinderGeometry args={[R_TOP_OUTER, R_BOT_OUTER, HEIGHT, 36, 1, true]} />
         </mesh>
 
         {/* ═══ 2. INNER REFRACTORY LINING (BackSide visible inside) ═══ */}
         <mesh material={refractoryMat}>
           <cylinderGeometry
-            args={[R_TOP - 0.05, R_BOT - 0.04, HEIGHT - 0.02, 36, 1, true]}
+            args={[R_TOP_INNER, R_BOT_INNER, HEIGHT - 0.02, 36, 1, true]}
           />
         </mesh>
 
@@ -230,27 +294,27 @@ export default function PouringLadle({ debugFlow = false }: { debugFlow?: boolea
           rotation={[-Math.PI / 2, 0, 0]}
           material={refractoryMat}
         >
-          <circleGeometry args={[R_BOT - 0.05, 32]} />
+          <circleGeometry args={[R_BOT_INNER, 32]} />
         </mesh>
 
         {/* ═══ 4. TOP COLLAR & MOUTH RIM ═══ */}
         <mesh position={[0, HEIGHT / 2, 0]} rotation={[Math.PI / 2, 0, 0]} material={rimMat}>
-          <torusGeometry args={[R_TOP - 0.01, 0.065, 16, 36]} />
+          <torusGeometry args={[R_TOP_OUTER - 0.01, 0.065, 16, 36]} />
         </mesh>
 
-        {/* ═══ 5. POURING LIP ═══ */}
-        <group position={[R_TOP - 0.04, HEIGHT / 2 - 0.04, 0]}>
-          <mesh material={rimMat} rotation={[0, 0, -Math.PI / 4]}>
+        {/* ═══ 5. POURING LIP SPOUT ═══ */}
+        <group position={[R_TOP_OUTER - 0.02, HEIGHT / 2 - 0.03, 0]}>
+          <mesh material={rimMat} rotation={[0, 0, -Math.PI / 4.5]}>
             <cylinderGeometry args={[0.08, 0.16, 0.35, 16]} />
           </mesh>
-          <mesh ref={spoutMarkerRef} position={[0.42, -0.18, 0]} visible={debugFlow}>
+          <mesh ref={spoutMarkerRef} position={[0.38, -0.16, 0]} visible={debugFlow}>
             <sphereGeometry args={[0.04]} />
             <meshBasicMaterial color="red" />
           </mesh>
         </group>
 
         {/* Marker at top center of mouth (target for furnace pour stream) */}
-        <mesh ref={fillMarkerRef} position={[0, HEIGHT / 2 + 0.05, 0]} visible={debugFlow}>
+        <mesh ref={fillMarkerRef} position={[0, HEIGHT / 2 + 0.04, 0]} visible={debugFlow}>
           <sphereGeometry args={[0.05]} />
           <meshBasicMaterial color="cyan" />
         </mesh>
@@ -268,14 +332,13 @@ export default function PouringLadle({ debugFlow = false }: { debugFlow?: boolea
 
         {/* Base reinforcing band */}
         <mesh position={[0, -HEIGHT / 2 + 0.05, 0]} rotation={[Math.PI / 2, 0, 0]} material={rimMat}>
-          <torusGeometry args={[R_BOT + 0.04, 0.05, 12, 36]} />
+          <torusGeometry args={[R_BOT_OUTER + 0.04, 0.05, 12, 36]} />
         </mesh>
 
-        {/* ═══ 7. LIQUID METAL MESH (Scales smoothly from bottom) ═══ */}
+        {/* ═══ 7. DYNAMIC ADAPTIVE CONICAL LIQUID METAL MESH ═══ */}
         <mesh
           ref={metalMeshRef}
-          position={[0, FLOOR_Y, 0]}
-          geometry={metalGeom}
+          geometry={dynamicLiquidGeom}
           material={metalShaderMat.current}
           visible={false}
         />
@@ -283,9 +346,19 @@ export default function PouringLadle({ debugFlow = false }: { debugFlow?: boolea
         {/* ═══ 8. INCANDESCENT CORE POINT LIGHT ═══ */}
         <pointLight
           ref={ladleLightRef}
-          position={[0, HEIGHT / 2 + 0.2, 0]}
+          position={[0, HEIGHT / 2 + 0.15, 0]}
           color="#ff6600"
           distance={10}
+          decay={2}
+          intensity={0}
+        />
+
+        {/* ═══ 9. SPRUE FOCUS LIGHT AT BASE (Focuses on sprue funnel) ═══ */}
+        <pointLight
+          ref={sprueFocusLightRef}
+          position={[0, FLOOR_Y - 0.15, 0]}
+          color="#ff5500"
+          distance={6}
           decay={2}
           intensity={0}
         />
