@@ -1,5 +1,6 @@
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
+import gsap from "gsap";
 
 interface PageTransitionProps {
   children: ReactNode;
@@ -7,35 +8,35 @@ interface PageTransitionProps {
 
 const PageTransition = ({ children }: PageTransitionProps) => {
   const location = useLocation();
-  const [displayChildren, setDisplayChildren] = useState(children);
-  const [stage, setStage] = useState<"in" | "out">("in");
+  const contentRef = useRef<HTMLDivElement>(null);
+  const isFirstRender = useRef(true);
 
   useEffect(() => {
-    setStage("out");
-    const t = setTimeout(() => {
-      setDisplayChildren(children);
-      setStage("in");
-      window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
-    }, 200);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const content = contentRef.current;
+
+    if (!content || prefersReduced) return;
+
+    // Animate content entrance cleanly on route change
+    gsap.fromTo(
+      content,
+      { opacity: 0, y: 15 },
+      {
+        opacity: 1,
+        y: 0,
+        duration: 0.4,
+        ease: "power2.out",
+        clearProps: "all",
+      }
+    );
   }, [location.pathname]);
 
-  useEffect(() => {
-    setDisplayChildren(children);
-  }, [children]);
-
-  return (
-    <div
-      className={`transition-all duration-500 ease-out ${
-        stage === "in"
-          ? "opacity-100 translate-y-0"
-          : "opacity-0 translate-y-2"
-      }`}
-    >
-      {displayChildren}
-    </div>
-  );
+  return <div ref={contentRef}>{children}</div>;
 };
 
 export default PageTransition;

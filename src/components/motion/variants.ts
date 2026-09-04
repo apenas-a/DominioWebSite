@@ -1,38 +1,58 @@
-export const revealUp = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { 
-    opacity: 1, 
-    y: 0, 
-    transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] } 
-  }
-};
+/**
+ * GSAP Animation Presets
+ * Centralized animation configurations for consistent motion across the site.
+ * These are used with gsap.from() / gsap.to() calls.
+ */
 
-export const revealBlur = {
-  hidden: { opacity: 0, filter: "blur(10px)", y: 20 },
-  visible: { 
-    opacity: 1, 
-    filter: "blur(0px)", 
-    y: 0, 
-    transition: { duration: 1, ease: "easeOut" } 
-  }
-};
+export const gsapPresets = {
+  /** Fade up from below */
+  revealUp: {
+    from: { opacity: 0, y: 40 },
+    config: { duration: 0.7, ease: "power3.out" },
+  },
 
-export const staggerContainer = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.15,
-      delayChildren: 0.1
-    }
-  }
-};
+  /** Fade up with blur */
+  revealBlur: {
+    from: { opacity: 0, y: 20, filter: "blur(8px)" },
+    config: { duration: 0.8, ease: "power2.out" },
+  },
 
-export const parallaxSlow = {
-  hidden: { y: 50, opacity: 0 },
-  visible: { 
-    y: 0, 
-    opacity: 1, 
-    transition: { duration: 1.5, ease: [0.16, 1, 0.3, 1] } 
-  }
-};
+  /** Slide from left */
+  slideLeft: {
+    from: { opacity: 0, x: -40 },
+    config: { duration: 0.7, ease: "power3.out" },
+  },
+
+  /** Slide from right */
+  slideRight: {
+    from: { opacity: 0, x: 40 },
+    config: { duration: 0.7, ease: "power3.out" },
+  },
+
+  /** Scale up from smaller */
+  scaleUp: {
+    from: { opacity: 0, scale: 0.95 },
+    config: { duration: 0.6, ease: "power2.out" },
+  },
+
+  /** Stagger children defaults */
+  stagger: {
+    amount: 0.1,
+    from: "start" as const,
+  },
+
+  /** Easing presets */
+  easing: {
+    smooth: "power3.out",
+    bounce: "back.out(1.2)",
+    sharp: "power4.inOut",
+    linear: "none",
+    elastic: "elastic.out(1, 0.5)",
+  },
+
+  /** ScrollTrigger defaults */
+  scrollTrigger: {
+    start: "top 85%",
+    toggleActions: "play none none none" as const,
+  },
+} as const;

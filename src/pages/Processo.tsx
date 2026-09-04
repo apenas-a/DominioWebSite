@@ -1,12 +1,9 @@
-import Layout from "@/components/layout/Layout";
-import Process from "@/components/sections/Process";
-import ProcessQuality from "@/components/sections/ProcessQuality";
+import CastingProcess from '@/components/casting/CastingProcess';
 
 const Processo = () => (
-  <Layout>
-    <Process />
-    <ProcessQuality />
-  </Layout>
+  <>
+    <CastingProcess />
+  </>
 );
 
 export default Processo;

@@ -1,10 +1,9 @@
-import Layout from "@/components/layout/Layout";
 import SteelFamilySection from "@/components/sections/SteelFamilySection";
 import AlloysComparison from "@/components/sections/AlloysComparison";
 import { nodularIrons, cinzentoIrons, vermicularIrons } from "@/data/irons";
 
 const Ferro = () => (
-  <Layout>
+  <>
     <SteelFamilySection
       id="nodular"
       badge="Ferro Nodular"
@@ -28,7 +27,7 @@ const Ferro = () => (
       alloys={vermicularIrons}
     />
     <AlloysComparison />
-  </Layout>
+  </>
 );
 
 export default Ferro;

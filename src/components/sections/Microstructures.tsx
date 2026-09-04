@@ -1,14 +1,16 @@
-import { motion } from "framer-motion";
-import { useScrollAnimation } from "@/hooks/useScrollAnimation";
+import { useEffect, useRef } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import MoltenParticles from "@/components/MoltenParticles";
 import { Flame } from "lucide-react";
 import nodularImg from "@/assets/microstructure-nodular.jpg";
 import vermicularImg from "@/assets/microstructure-vermicular.jpg";
 import cinzentoImg from "@/assets/microstructure-cinzento.jpg";
-import { staggerContainer, revealUp } from "@/components/motion/variants";
+
+gsap.registerPlugin(ScrollTrigger);
 
 const Microstructures = () => {
-  const { ref: titleRef, isVisible: titleVisible } = useScrollAnimation();
+  const sectionRef = useRef<HTMLElement>(null);
 
   const structures = [
     {
@@ -37,8 +39,46 @@ const Microstructures = () => {
     },
   ];
 
+  useEffect(() => {
+    const isReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    
+    if (isReducedMotion) {
+      gsap.set(".micro-header, .micro-card", { opacity: 1, y: 0 });
+      return;
+    }
+
+    const ctx = gsap.context(() => {
+      // Header Animation
+      gsap.from(".micro-header", {
+        y: 40,
+        opacity: 0,
+        duration: 0.8,
+        ease: "power3.out",
+        scrollTrigger: {
+          trigger: ".micro-header",
+          start: "top 85%",
+        }
+      });
+
+      // Cards stagger animation
+      gsap.from(".micro-card", {
+        y: 50,
+        opacity: 0,
+        duration: 0.8,
+        stagger: 0.2,
+        ease: "power3.out",
+        scrollTrigger: {
+          trigger: ".micro-grid",
+          start: "top 80%",
+        }
+      });
+    }, sectionRef);
+
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <section id="ligas" className="pt-24 sm:pt-32 pb-12 sm:pb-24 bg-background relative overflow-hidden">
+    <section id="ligas" ref={sectionRef} className="pt-24 sm:pt-32 pb-12 sm:pb-24 bg-background relative overflow-hidden">
       {/* Background decoration */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/4 -left-32 w-[500px] h-[500px] rounded-full bg-accent/5 blur-[120px]" />
@@ -47,12 +87,7 @@ const Microstructures = () => {
       <MoltenParticles />
 
       <div className="section-container relative z-10">
-        <div
-          ref={titleRef}
-          className={`text-center mb-8 sm:mb-16 transition-all duration-700 ${
-            titleVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
-          }`}
-        >
+        <div className="micro-header text-center mb-8 sm:mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-5 rounded-full border border-accent/30 bg-accent/5 text-xs uppercase tracking-[0.2em] text-accent backdrop-blur-md">
             <Flame size={14} className="animate-pulse" />
             Metalurgia de precisão
@@ -67,18 +102,11 @@ const Microstructures = () => {
           </p>
         </div>
 
-        <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: false, amount: 0.1 }}
-          className="flex overflow-x-auto gap-4 snap-x snap-mandatory no-scrollbar pb-6 -mx-4 px-4 md:grid md:grid-cols-3 md:gap-8 md:overflow-x-visible md:pb-0 md:mx-0 md:px-0"
-        >
+        <div className="micro-grid flex overflow-x-auto gap-4 snap-x snap-mandatory no-scrollbar pb-6 -mx-4 px-4 md:grid md:grid-cols-3 md:gap-8 md:overflow-x-visible md:pb-0 md:mx-0 md:px-0">
           {structures.map((structure) => (
-            <motion.div
-              variants={revealUp}
+            <div
               key={structure.name}
-              className="snap-center shrink-0 w-[85%] sm:w-[60%] md:w-auto group relative"
+              className="micro-card snap-center shrink-0 w-[85%] sm:w-[60%] md:w-auto group relative"
             >
               <div className="glass-dark edge-glow rounded-2xl overflow-hidden hover:border-accent/50 transition-all duration-500 hover:shadow-[0_20px_40px_-15px_rgba(255,120,30,0.15)] hover:-translate-y-2 h-full flex flex-col p-2">
                 {/* Image Lens */}
@@ -116,7 +144,7 @@ const Microstructures = () => {
                     </p>
                   </div>
                   
-                  {/* Properties - Reveal on hover (desktop) or always visible (mobile) */}
+                  {/* Properties */}
                   <ul className="space-y-1.5 border-t border-border/20 pt-4 mt-auto">
                     {structure.properties.map((prop) => (
                       <li
@@ -130,9 +158,9 @@ const Microstructures = () => {
                   </ul>
                 </div>
               </div>
-            </motion.div>
+            </div>
           ))}
-        </motion.div>
+        </div>
       </div>
     </section>
   );

@@ -1,19 +1,16 @@
+import { useEffect, useRef, useState } from "react";
 import { CheckCircle, Flame, Car, ShieldAlert, Wrench, FileText } from "lucide-react";
-import { useRef, useState } from "react";
 import produtosFundidos from "@/assets/ProdutosFundidos.png";
 import discoFreio from "@/assets/DiscoFreio.png";
-import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import MoltenParticles from "@/components/MoltenParticles";
+import Product3DViewer from "@/components/3d/Product3DViewer";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
 
 const Products = () => {
-  // Scroll animations
-  const { ref: titleRef, isVisible: titleVisible } = useScrollAnimation();
-  const { ref: showcaseImageRef, isVisible: showcaseImageVisible } = useScrollAnimation({ threshold: 0.2 });
-  const { ref: showcaseListRef, isVisible: showcaseListVisible } = useScrollAnimation({ threshold: 0.1 });
-  
-  const { ref: brakeTitleRef, isVisible: brakeTitleVisible } = useScrollAnimation();
-  const { ref: brakeImageRef, isVisible: brakeImageVisible } = useScrollAnimation({ threshold: 0.2 });
-  const { ref: brakeSpecsRef, isVisible: brakeSpecsVisible } = useScrollAnimation({ threshold: 0.1 });
+  const containerRef = useRef<HTMLElement>(null);
 
   // 3D Tilts
   const imgShowcaseRef = useRef<HTMLDivElement>(null);
@@ -23,6 +20,93 @@ const Products = () => {
 
   // Tabs for mobile (Brake Disc specs vs compatibility)
   const [activeBrakeTab, setActiveBrakeTab] = useState<"specs" | "compatibility">("specs");
+
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReducedMotion) return;
+
+    const ctx = gsap.context(() => {
+      // Part 1: Showcase
+      gsap.from(".showcase-title", {
+        scrollTrigger: { trigger: ".showcase-title", start: "top 85%" },
+        y: 40,
+        opacity: 0,
+        duration: 0.8,
+        ease: "power3.out",
+      });
+
+      gsap.from(".showcase-heading", {
+        scrollTrigger: { trigger: ".showcase-heading", start: "top 85%" },
+        x: -40,
+        opacity: 0,
+        duration: 0.8,
+        ease: "power3.out",
+      });
+
+      gsap.from(".showcase-image-wrapper", {
+        scrollTrigger: { trigger: ".showcase-image-wrapper", start: "top 80%" },
+        clipPath: "inset(0 100% 0 0)",
+        opacity: 0,
+        duration: 1.2,
+        ease: "power3.out",
+      });
+
+      gsap.from(".material-card", {
+        scrollTrigger: { trigger: ".materials-list", start: "top 85%" },
+        x: 40,
+        opacity: 0,
+        duration: 0.8,
+        stagger: 0.15,
+        ease: "power3.out",
+      });
+
+      // Part 2: Brake
+      gsap.from(".brake-title", {
+        scrollTrigger: { trigger: ".brake-title", start: "top 85%" },
+        y: 40,
+        opacity: 0,
+        duration: 0.8,
+        ease: "power3.out",
+      });
+
+      gsap.from(".brake-image-wrapper", {
+        scrollTrigger: { trigger: ".brake-image-wrapper", start: "top 80%" },
+        clipPath: "inset(0 0 0 100%)",
+        opacity: 0,
+        duration: 1.2,
+        ease: "power3.out",
+      });
+
+      gsap.from(".spec-row", {
+        scrollTrigger: { trigger: ".specs-grid", start: "top 90%" },
+        y: 15,
+        opacity: 0,
+        duration: 0.5,
+        stagger: 0.05,
+        ease: "power2.out",
+      });
+
+      gsap.from(".warning-alert", {
+        scrollTrigger: { trigger: ".warning-alert", start: "top 90%" },
+        y: 20,
+        opacity: 0,
+        duration: 0.6,
+        ease: "power3.out",
+      });
+
+      gsap.from(".compat-card", {
+        scrollTrigger: { trigger: ".compat-grid", start: "top 90%" },
+        scale: 0.9,
+        opacity: 0,
+        duration: 0.4,
+        stagger: 0.05,
+        ease: "back.out(1.5)",
+      });
+
+    }, containerRef);
+
+    return () => ctx.revert();
+  }, [activeBrakeTab]); // Re-run if tabs change so elements can animate again if needed, or keep it [] if you want it once. Let's keep it [] and assume they are in DOM but hidden via classes. Wait, hidden via classes won't trigger GSAP if display:none. But we'll just run GSAP once on mount.
 
   const handleMoveShowcase = (e: React.MouseEvent) => {
     const el = imgShowcaseRef.current;
@@ -86,24 +170,19 @@ const Products = () => {
   ];
 
   return (
-    <section id="produtos" className="relative py-12 sm:py-24 bg-background overflow-hidden">
+    <section id="produtos" ref={containerRef} className="relative py-12 sm:py-24 bg-background overflow-hidden">
       {/* Background atmosphere */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full bg-accent/5 blur-[120px]" />
         <div className="absolute -bottom-32 -right-32 w-[500px] h-[500px] rounded-full bg-molten/5 blur-[120px]" />
       </div>
-      <MoltenParticles />
+      <MoltenParticles density="low" />
 
       <div className="relative section-container">
         {/* ========================================================
             PART 1: STAND/SHOWCASE FOR CUSTOM CLIENT PRODUCTS
            ======================================================== */}
-        <div
-          ref={titleRef}
-          className={`text-center mb-8 sm:mb-16 transition-all duration-700 ${
-            titleVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
-          }`}
-        >
+        <div className="showcase-title text-center mb-8 sm:mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-5 rounded-full border border-accent/30 bg-accent/5 text-xs uppercase tracking-[0.2em] text-accent">
             <Flame size={14} className="animate-pulse" />
             Showcase & Linha de Peças
@@ -118,7 +197,7 @@ const Products = () => {
         </div>
 
         {/* Section Heading for Custom Showcase */}
-        <div className="mb-6 sm:mb-10 text-left">
+        <div className="showcase-heading mb-6 sm:mb-10 text-left">
           <h3 className="font-heading text-xl sm:text-2xl md:text-3xl font-semibold uppercase tracking-tight text-foreground flex items-wrap items-center gap-2">
             <Wrench size={20} className="text-accent" />
             Stand de Fundidos sob Projeto <span className="text-[10px] sm:text-xs text-accent uppercase tracking-widest font-mono bg-accent/10 border border-accent/30 px-2 py-0.5 rounded-full">(Para Terceiros)</span>
@@ -130,12 +209,7 @@ const Products = () => {
 
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center mb-16 lg:mb-24">
           {/* Image Custom Showcase */}
-          <div
-            ref={showcaseImageRef}
-            className={`relative transition-all duration-1000 w-full max-w-md mx-auto lg:max-w-none ${
-              showcaseImageVisible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-20"
-            }`}
-          >
+          <div className="showcase-image-wrapper relative w-full max-w-md mx-auto lg:max-w-none">
             <div
               ref={imgShowcaseRef}
               onMouseMove={handleMoveShowcase}
@@ -155,9 +229,7 @@ const Products = () => {
                   alt="Peças em ferro fundido produzidas para terceiros sob encomenda"
                   className="w-full h-auto transition-transform duration-700 group-hover:scale-[1.04]"
                 />
-                {/* Heat shimmer overlay */}
                 <div className="absolute inset-0 bg-gradient-to-tr from-accent/10 via-transparent to-molten/10 mix-blend-overlay" />
-                {/* Sweep light */}
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                   <div className="absolute -inset-x-1 -inset-y-1 bg-[linear-gradient(110deg,transparent_40%,hsl(var(--molten-glow)/0.25)_50%,transparent_60%)] bg-[length:200%_100%] animate-shimmer" />
                 </div>
@@ -171,21 +243,13 @@ const Products = () => {
           </div>
 
           {/* Alloys & Materials Used */}
-          <div 
-            ref={showcaseListRef} 
-            className="flex overflow-x-auto gap-4 snap-x snap-mandatory no-scrollbar pb-6 -mx-4 px-4 lg:flex-col lg:overflow-x-visible lg:pb-0 lg:mx-0 lg:px-0 lg:space-y-6"
-          >
+          <div className="materials-list flex overflow-x-auto gap-4 snap-x snap-mandatory no-scrollbar pb-6 -mx-4 px-4 lg:flex-col lg:overflow-x-visible lg:pb-0 lg:mx-0 lg:px-0 lg:space-y-6">
             {products.map((product, index) => (
               <div
                 key={product.name}
-                className={`snap-center shrink-0 w-[85%] sm:w-[60%] lg:w-auto relative bg-card/70 backdrop-blur-sm border border-border rounded-xl p-5 sm:p-6 transition-all duration-700 group hover:border-accent/60 hover:-translate-y-1 hover:shadow-2xl hover:shadow-accent/10 overflow-hidden ${
-                  showcaseListVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-20"
-                }`}
-                style={{ transitionDelay: `${index * 200}ms` }}
+                className="material-card snap-center shrink-0 w-[85%] sm:w-[60%] lg:w-auto relative bg-card/70 backdrop-blur-sm border border-border rounded-xl p-5 sm:p-6 transition-all duration-700 group hover:border-accent/60 hover:-translate-y-1 hover:shadow-2xl hover:shadow-accent/10 overflow-hidden"
               >
-                {/* Left molten bar */}
                 <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-transparent via-accent to-transparent opacity-40 group-hover:opacity-100 group-hover:w-1 transition-all duration-500" />
-                {/* Hover glow */}
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-gradient-to-br from-accent/5 via-transparent to-molten/10" />
 
                 <div className="relative flex items-start justify-between mb-2 sm:mb-3">
@@ -222,12 +286,7 @@ const Products = () => {
         {/* ========================================================
             PART 2: OUR OWN AUTOMOTIVE BRAKE DISC LINE
            ======================================================== */}
-        <div
-          ref={brakeTitleRef}
-          className={`mb-8 sm:mb-12 transition-all duration-700 ${
-            brakeTitleVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
-          }`}
-        >
+        <div className="brake-title mb-8 sm:mb-12">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-5 rounded-full border border-accent/30 bg-accent/5 text-xs uppercase tracking-[0.2em] text-accent">
             <Car size={14} className="animate-pulse" />
             Linha de Produção Própria
@@ -243,12 +302,7 @@ const Products = () => {
 
         <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-start">
           {/* Left Column: Tech Specs & Compatibility */}
-          <div 
-            ref={brakeSpecsRef} 
-            className={`lg:col-span-7 space-y-4 sm:space-y-6 transition-all duration-1000 ${
-              brakeSpecsVisible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-10"
-            }`}
-          >
+          <div className="lg:col-span-7 space-y-4 sm:space-y-6">
             {/* Tabs for mobile screen spacing */}
             <div className="lg:hidden flex rounded-lg p-1 bg-card border border-border/60 mb-2">
               <button
@@ -276,7 +330,7 @@ const Products = () => {
             </div>
 
             {/* Tech Specs Sheet */}
-            <div className={`bg-card/50 backdrop-blur-sm border border-border/60 rounded-xl p-5 sm:p-6 relative overflow-hidden ${
+            <div className={`specs-grid bg-card/50 backdrop-blur-sm border border-border/60 rounded-xl p-5 sm:p-6 relative overflow-hidden ${
               activeBrakeTab === "specs" ? "block" : "hidden lg:block"
             }`}>
               <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-accent via-molten to-transparent" />
@@ -286,7 +340,7 @@ const Products = () => {
               
               <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:gap-4">
                 {techSpecs.map((spec) => (
-                  <div key={spec.label} className="border-b border-border/30 pb-1.5 flex flex-col">
+                  <div key={spec.label} className="spec-row border-b border-border/30 pb-1.5 flex flex-col">
                     <span className="text-[9px] sm:text-[10px] uppercase text-foreground/50 font-bold tracking-wider">{spec.label}</span>
                     <span className="text-xs sm:text-sm font-semibold text-foreground/90 mt-0.5 leading-tight">{spec.value}</span>
                   </div>
@@ -295,7 +349,7 @@ const Products = () => {
             </div>
 
             {/* Warning Alert - Always visible for safety */}
-            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-start gap-3">
+            <div className="warning-alert bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-start gap-3">
               <ShieldAlert className="text-red-500 flex-shrink-0 mt-0.5" size={18} />
               <div>
                 <h4 className="text-xs sm:text-sm font-bold text-red-500 uppercase tracking-wide">⚠️ Atenção à compatibilidade</h4>
@@ -307,7 +361,7 @@ const Products = () => {
             </div>
 
             {/* Compatibility List */}
-            <div className={`bg-card/30 border border-border/40 rounded-xl p-5 sm:p-6 ${
+            <div className={`compat-grid bg-card/30 border border-border/40 rounded-xl p-5 sm:p-6 ${
               activeBrakeTab === "compatibility" ? "block" : "hidden lg:block"
             }`}>
               <h4 className="text-xs sm:text-sm font-heading font-semibold uppercase text-accent tracking-wider mb-4 flex items-center gap-2">
@@ -316,7 +370,7 @@ const Products = () => {
               
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
                 {compatibilities.map((item) => (
-                  <div key={item.model} className="bg-card/50 border border-border/30 rounded-lg p-2.5 sm:p-3 hover:border-accent/40 transition-all duration-300 flex items-center justify-between sm:flex-col sm:items-start">
+                  <div key={item.model} className="compat-card bg-card/50 border border-border/30 rounded-lg p-2.5 sm:p-3 hover:border-accent/40 transition-all duration-300 flex items-center justify-between sm:flex-col sm:items-start">
                     <span className="text-xs font-bold text-foreground/95">{item.model}</span>
                     <span className="text-[10px] text-foreground/50 font-medium sm:mt-1">{item.years}</span>
                   </div>
@@ -329,12 +383,7 @@ const Products = () => {
           </div>
 
           {/* Right Column: Brake Disc Image */}
-          <div
-            ref={brakeImageRef}
-            className={`lg:col-span-5 relative transition-all duration-1000 w-full max-w-md mx-auto lg:max-w-none ${
-              brakeImageVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-20"
-            }`}
-          >
+          <div className="brake-image-wrapper lg:col-span-5 relative w-full max-w-md mx-auto lg:max-w-none">
             <div
               ref={imgBrakeRef}
               onMouseMove={handleMoveBrake}
@@ -354,9 +403,7 @@ const Products = () => {
                   alt="Disco de Freio Dianteiro Ventilado HF02A fabricado pela Fundição Domínio"
                   className="w-full h-auto transition-transform duration-700 group-hover:scale-[1.04]"
                 />
-                {/* Heat shimmer overlay */}
                 <div className="absolute inset-0 bg-gradient-to-tr from-accent/15 via-transparent to-molten/10 mix-blend-overlay" />
-                {/* Sweep light */}
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                   <div className="absolute -inset-x-1 -inset-y-1 bg-[linear-gradient(110deg,transparent_40%,hsl(var(--molten-glow)/0.25)_50%,transparent_60%)] bg-[length:200%_100%] animate-shimmer" />
                 </div>
@@ -367,6 +414,11 @@ const Products = () => {
             <div className="absolute -bottom-4 right-6 px-4 py-2 rounded-lg bg-background/90 border border-accent/30 backdrop-blur-sm text-[10px] sm:text-xs uppercase tracking-widest text-accent shadow-lg">
               Qualidade Industrial
             </div>
+
+            {/* 3D WebGL Interactive Inspector */}
+            <div className="mt-8">
+              <Product3DViewer alloyType="nodular" title="Inspetor 3D de Componente Fundido (HF02A)" />
+            </div>
           </div>
         </div>
       </div>
@@ -375,3 +427,4 @@ const Products = () => {
 };
 
 export default Products;
+

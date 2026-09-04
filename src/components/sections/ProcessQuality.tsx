@@ -1,123 +1,203 @@
-import { Microscope, TestTube, Scale, ShieldCheck } from "lucide-react";
-import { useScrollAnimation } from "@/hooks/useScrollAnimation";
-import analiseImg from "@/assets/process-analise.jpg";
+import { useRef, useState, useEffect } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { Microscope, TestTube, Scale, ShieldCheck, Activity, CheckCircle2, Award, Zap } from "lucide-react";
+import LabSpectrometerCanvas from "@/components/3d/LabSpectrometerCanvas";
+
+gsap.registerPlugin(ScrollTrigger);
 
 const ProcessQuality = () => {
-  const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
+  const sectionRef = useRef<HTMLElement>(null);
+  const cardsContainerRef = useRef<HTMLDivElement>(null);
+  const [scrollProgress, setScrollProgress] = useState(0);
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+
+    const ctx = gsap.context(() => {
+      const mm = gsap.matchMedia();
+
+      mm.add("(prefers-reduced-motion: no-preference)", () => {
+        const cards = gsap.utils.toArray(".hud-card");
+
+        gsap.fromTo(
+          cards,
+          { opacity: 0, x: -50 },
+          {
+            opacity: 1,
+            x: 0,
+            duration: 0.8,
+            stagger: 0.15,
+            ease: "power2.out",
+            scrollTrigger: {
+              trigger: el,
+              start: "top 70%",
+              end: "top 20%",
+              scrub: 1,
+            },
+          }
+        );
+      });
+    }, el);
+
+    return () => ctx.revert();
+  }, []);
+
+  const isSparkActive = scrollProgress >= 0.65;
 
   return (
-    <section className="py-16 sm:py-24 bg-background relative overflow-hidden border-t border-border/50">
-      <div className="section-container" ref={ref}>
+    <section
+      ref={sectionRef}
+      className="relative w-full bg-[#0a0f18] py-16 sm:py-24 border-t border-border/50 overflow-hidden"
+      style={{ minHeight: "220vh" }} // Provides continuous scroll distance for camera scrub
+    >
+      {/* Background cyan glow accent */}
+      <div className="absolute top-1/3 right-0 -translate-y-1/2 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
 
-        {/* Bento Grid Layout */}
-        <div
-          className={`grid grid-cols-1 lg:grid-cols-3 lg:grid-rows-2 gap-4 sm:gap-5 transition-all duration-700 ${
-            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
-          }`}
-        >
-
-          {/* Cell 1 — Título e texto (col-span-2, row 1) */}
-          <div className="glass-dark edge-glow rounded-2xl p-8 sm:p-10 flex flex-col justify-center lg:col-span-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 mb-6 rounded-full border border-accent/30 bg-accent/5 text-[11px] uppercase tracking-[0.2em] text-accent w-fit">
-              <ShieldCheck size={13} />
-              Controle de Qualidade
-            </div>
-            <h2 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold uppercase tracking-tight mb-4">
-              Garantia de <span className="text-gradient-molten">Qualidade</span>
-            </h2>
-            <div className="w-20 h-1 gradient-molten mb-6" />
-            <p className="text-foreground/70 text-sm sm:text-base leading-relaxed max-w-xl">
-              Nossos componentes estarão no coração de maquinários pesados, veículos e
-              equipamentos agrícolas. Por isso, o controle de qualidade é implacável em
-              todas as etapas — da areia ao acabamento.
-            </p>
-          </div>
-
-          {/* Cell 2 — Imagem de laboratório (col 3, rows 1 e 2) */}
-          <div
-            className={`relative rounded-2xl overflow-hidden lg:row-span-2 min-h-[260px] lg:min-h-0 transition-all duration-700 delay-150 ${
-              isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
-            }`}
-          >
-            <img
-              src={analiseImg}
-              alt="Análise química laboratorial no espectrômetro"
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-r from-background/30 to-transparent" />
-            {/* Status badge on the image */}
-            <div className="absolute bottom-4 left-4 right-4 glass-dark rounded-xl p-4 flex items-center justify-between border border-white/10">
-              <div>
-                <p className="text-[10px] uppercase tracking-widest text-accent font-semibold mb-0.5">
-                  Status de Inspeção
+      {/* Sticky Container for Pinning Viewport */}
+      <div className="sticky top-0 h-screen w-full flex items-center justify-center p-4 sm:p-8">
+        <div className="section-container w-full max-w-7xl mx-auto">
+          
+          {/* Main Grid: 35% Left (Cards HUD), 65% Right (3D WebGL Canvas) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
+            
+            {/* ========================================================= */}
+            {/* LEFT 35% COLUMN: Glassmorphism Technical HUD Cards */}
+            {/* ========================================================= */}
+            <div
+              ref={cardsContainerRef}
+              className="lg:col-span-4 flex flex-col gap-4 sm:gap-5 justify-center z-10"
+            >
+              {/* Card 1: Main Title & Status */}
+              <div className="hud-card glass-dark edge-glow rounded-2xl p-6 sm:p-7 border border-white/10 shadow-2xl backdrop-blur-xl bg-slate-900/75">
+                <div className="inline-flex items-center gap-2 px-3 py-1 mb-3 rounded-full border border-cyan-500/30 bg-cyan-500/10 text-[11px] uppercase tracking-[0.2em] text-cyan-400 w-fit">
+                  <ShieldCheck size={13} />
+                  NBR ISO/IEC 17025
+                </div>
+                <h2 className="font-heading text-2xl sm:text-3xl font-bold uppercase tracking-tight text-white mb-2">
+                  Garantia de <span className="text-gradient-molten">Qualidade</span>
+                </h2>
+                <div className="w-16 h-1 gradient-molten mb-3" />
+                <p className="text-foreground/75 text-xs leading-relaxed">
+                  Estação de espectrometria óptica SPECTROMAXx calibrada para análise química de precisão instantânea.
                 </p>
-                <p className="font-heading text-lg uppercase font-bold text-foreground">
-                  Aprovado
-                </p>
+
+                {/* Status Badge */}
+                <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Zap size={14} className={isSparkActive ? "text-cyan-400 animate-pulse" : "text-slate-500"} />
+                    <span className="text-[11px] font-mono text-foreground/60 uppercase">STATUS ENSAIO:</span>
+                  </div>
+                  <span
+                    className={`font-mono text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
+                      isSparkActive
+                        ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                        : "bg-slate-800 border-slate-700 text-slate-400"
+                    }`}
+                  >
+                    {isSparkActive ? "100% CONFORME" : "STANDBY"}
+                  </span>
+                </div>
               </div>
-              <div className="w-11 h-11 rounded-full gradient-molten flex items-center justify-center shadow-lg shadow-accent/20">
-                <ShieldCheck className="w-5 h-5 text-background" />
+
+              {/* Card 2: Technical Elements Analysis */}
+              <div className="hud-card glass-dark edge-glow rounded-2xl p-5 border border-white/10 shadow-2xl backdrop-blur-xl bg-slate-900/75 flex gap-3.5 items-start">
+                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center shrink-0 text-cyan-400 mt-0.5">
+                  <TestTube size={18} />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-heading text-xs font-bold uppercase text-white mb-1">
+                    Espectrometria SPECTROMAXx
+                  </h3>
+                  <p className="text-[11px] text-foreground/65 leading-relaxed mb-2">
+                    Teores Nominais conforme normas ASTM E415 & SAE J431:
+                  </p>
+                  <div className="grid grid-cols-3 gap-1.5 font-mono text-[10px]">
+                    <div className="bg-black/40 p-1 rounded border border-white/5 text-center">
+                      <span className="text-foreground/40 block">C</span>
+                      <strong className={isSparkActive ? "text-cyan-400" : "text-foreground/50"}>
+                        {isSparkActive ? "3.42%" : "---"}
+                      </strong>
+                    </div>
+                    <div className="bg-black/40 p-1 rounded border border-white/5 text-center">
+                      <span className="text-foreground/40 block">Si</span>
+                      <strong className={isSparkActive ? "text-cyan-400" : "text-foreground/50"}>
+                        {isSparkActive ? "2.15%" : "---"}
+                      </strong>
+                    </div>
+                    <div className="bg-black/40 p-1 rounded border border-white/5 text-center">
+                      <span className="text-foreground/40 block">Mn</span>
+                      <strong className={isSparkActive ? "text-cyan-400" : "text-foreground/50"}>
+                        {isSparkActive ? "0.45%" : "---"}
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 3: Metalografia & Tolerâncias */}
+              <div className="hud-card glass-dark edge-glow rounded-2xl p-4 sm:p-5 border border-white/10 shadow-2xl backdrop-blur-xl bg-slate-900/75 flex gap-3.5 items-start">
+                <div className="w-10 h-10 rounded-xl bg-accent/10 border border-accent/30 flex items-center justify-center shrink-0 text-accent mt-0.5">
+                  <Microscope size={18} />
+                </div>
+                <div>
+                  <h3 className="font-heading text-xs font-bold uppercase text-white mb-1">
+                    Análise Metalográfica
+                  </h3>
+                  <p className="text-[11px] text-foreground/65 leading-relaxed">
+                    Nodularização &gt; 85% certificada em microscopia de grafitização.
+                  </p>
+                </div>
+              </div>
+
+              {/* Card 4: Certificação ISO */}
+              <div className="hud-card glass-dark edge-glow rounded-2xl p-4 border border-white/10 shadow-2xl backdrop-blur-xl bg-slate-900/75 flex items-center justify-between text-xs text-foreground/75">
+                <div className="flex items-center gap-2">
+                  <Award size={16} className="text-emerald-400" />
+                  <span className="font-mono text-[11px]">Certificação NBR ISO 9001</span>
+                </div>
+                <span className="font-mono text-cyan-400 text-[10px] font-bold">100% APROVADO</span>
               </div>
             </div>
+
+            {/* ========================================================= */}
+            {/* RIGHT 65% COLUMN: 3D WebGL Canvas */}
+            {/* ========================================================= */}
+            <div className="lg:col-span-8 h-[450px] sm:h-[550px] relative z-0">
+              <LabSpectrometerCanvas
+                sectionRef={sectionRef}
+                onProgressUpdate={(p) => setScrollProgress(p)}
+              />
+
+              {/* Floating Status Overlay on Top of 3D Canvas */}
+              <div className="absolute bottom-4 left-4 right-4 glass-dark edge-glow rounded-xl p-3.5 flex items-center justify-between gap-3 border border-white/10 backdrop-blur-xl pointer-events-auto bg-slate-900/80">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0">
+                    <CheckCircle2 size={18} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <Activity size={12} className={isSparkActive ? "text-cyan-400 animate-pulse" : "text-slate-500"} />
+                      <p className="text-[10px] uppercase tracking-widest text-cyan-400 font-bold">
+                        TELEMETRIA ESPECTRAL EM TEMPO REAL
+                      </p>
+                    </div>
+                    <p className="font-heading text-xs sm:text-sm uppercase font-bold text-white leading-tight">
+                      SPECTROMAXx — 100% CONFORME
+                    </p>
+                  </div>
+                </div>
+
+                <div className="hidden sm:flex items-center gap-2 font-mono text-[11px]">
+                  <span className="px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-foreground/80">
+                    NBR ISO/IEC 17025
+                  </span>
+                </div>
+              </div>
+            </div>
+
           </div>
-
-          {/* Cell 3 — Análise Metalográfica (col 1, row 2) */}
-          <div
-            className={`glass-dark edge-glow rounded-2xl p-6 flex gap-4 items-start transition-all duration-700 delay-200 ${
-              isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
-            }`}
-          >
-            <div className="w-11 h-11 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0 text-accent mt-0.5">
-              <Microscope size={20} />
-            </div>
-            <div>
-              <h3 className="font-heading text-base font-bold uppercase mb-2 text-foreground">
-                Análise Metalográfica
-              </h3>
-              <p className="text-xs text-foreground/60 leading-relaxed">
-                Avaliação rigorosa da microestrutura para garantir a nodularização ou
-                forma correta da grafita em cada corrida.
-              </p>
-            </div>
-          </div>
-
-          {/* Cell 4 — Espectrometria + Controle Dimensional (col 2, row 2) */}
-          <div
-            className={`flex flex-col gap-4 transition-all duration-700 delay-300 ${
-              isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
-            }`}
-          >
-            <div className="glass-dark edge-glow rounded-2xl p-6 flex gap-4 items-start flex-1">
-              <div className="w-11 h-11 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0 text-accent mt-0.5">
-                <TestTube size={20} />
-              </div>
-              <div>
-                <h3 className="font-heading text-base font-bold uppercase mb-2 text-foreground">
-                  Espectrometria
-                </h3>
-                <p className="text-xs text-foreground/60 leading-relaxed">
-                  Controle da composição química em tempo real antes de cada vazamento.
-                </p>
-              </div>
-            </div>
-
-            <div className="glass-dark edge-glow rounded-2xl p-6 flex gap-4 items-start flex-1">
-              <div className="w-11 h-11 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0 text-accent mt-0.5">
-                <Scale size={20} />
-              </div>
-              <div>
-                <h3 className="font-heading text-base font-bold uppercase mb-2 text-foreground">
-                  Controle Dimensional
-                </h3>
-                <p className="text-xs text-foreground/60 leading-relaxed">
-                  Peças dentro das tolerâncias do projeto, verificadas ao longo de toda
-                  a produção.
-                </p>
-              </div>
-            </div>
-          </div>
-
         </div>
       </div>
     </section>
