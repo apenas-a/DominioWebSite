@@ -42,7 +42,7 @@ export default function CastingScene({ progressRef, debug = false }: CastingScen
       </mesh>
       
       {/* Grid */}
-      <gridHelper args={[60, 40, '#ff550022', '#24283418']} position={[0, -0.49, 0]} />
+      <gridHelper args={[60, 40, '#441808', '#1a1d24']} position={[0, -0.49, 0]} />
     </CastingProvider>
   );
 }

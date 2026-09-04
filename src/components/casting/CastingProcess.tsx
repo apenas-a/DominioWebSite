@@ -138,7 +138,7 @@ export default function CastingProcess() {
         </div>
 
         {/* HUD Overlay */}
-        <div className="relative z-10 w-full h-full flex flex-col justify-between p-4 sm:p-8 md:p-12 pointer-events-none">
+        <div className="relative z-10 w-full h-full flex flex-col justify-between p-3.5 pb-20 sm:p-8 md:p-12 sm:pb-8 pointer-events-none">
           {/* Top Header */}
           <div className="flex items-center justify-between pointer-events-auto">
             <div>
@@ -155,64 +155,64 @@ export default function CastingProcess() {
             </div>
           </div>
 
-          {/* Center Left Card */}
-          <div className="my-auto max-w-md self-start pointer-events-auto">
-            <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl p-5 sm:p-7 shadow-2xl">
-              <div className="flex items-center justify-between mb-3 pb-3 border-b border-white/10">
-                <div className="flex items-center gap-3">
+          {/* Bottom Card on Mobile / Center Left on Desktop */}
+          <div className="mt-auto mb-1.5 sm:my-auto w-full max-w-[360px] sm:max-w-md self-center sm:self-start pointer-events-auto">
+            <div className="bg-black/75 backdrop-blur-xl border border-white/10 rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-2xl">
+              <div className="flex items-center justify-between mb-2 sm:mb-2.5 pb-2 sm:pb-2.5 border-b border-white/10">
+                <div className="flex items-center gap-2 sm:gap-2.5">
                   <span
-                    className="text-4xl font-bold text-transparent leading-none"
+                    className="text-2xl sm:text-3xl font-bold text-transparent leading-none"
                     style={{ WebkitTextStroke: '1px rgba(255,255,255,0.35)' }}
                   >
                     {currentStage.number}
                   </span>
                   <div>
-                    <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-[#ff5500]/40 bg-[#ff5500]/10 text-[10px] uppercase font-bold tracking-wider text-[#ff5500]">
-                      <Icon size={11} />
+                    <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border border-[#ff5500]/40 bg-[#ff5500]/10 text-[8.5px] sm:text-[9.5px] uppercase font-bold tracking-wider text-[#ff5500]">
+                      <Icon size={10} />
                       {currentStage.tag}
                     </div>
-                    <h2 className="text-base sm:text-lg font-bold uppercase text-white mt-1 leading-snug">
+                    <h2 className="text-xs sm:text-base font-bold uppercase text-white mt-0.5 leading-snug">
                       {currentStage.title}
                     </h2>
                   </div>
                 </div>
-                <div className="text-right hidden sm:block">
-                  <div className="flex items-center justify-end gap-1 text-xs text-[#ff5500] font-mono font-semibold">
-                    <Thermometer size={13} />
+                <div className="text-right shrink-0">
+                  <div className="flex items-center justify-end gap-1 text-[10px] sm:text-xs text-[#ff5500] font-mono font-semibold">
+                    <Thermometer size={11} className="sm:w-[12px] sm:h-[12px]" />
                     {currentStage.temp}
                   </div>
                 </div>
               </div>
 
-              <p className="text-white/70 text-xs sm:text-sm leading-relaxed mb-4">
+              <p className="text-white/70 text-[10.5px] sm:text-xs leading-relaxed mb-2 sm:mb-2.5">
                 {currentStage.desc}
               </p>
 
-              <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/5 text-xs text-white/60">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck size={13} className="text-cyan-400" />
-                  <span>{currentStage.material}</span>
+              <div className="flex items-center justify-between p-1.5 sm:p-2 rounded-lg bg-white/5 border border-white/5 text-[10px] sm:text-[11px] text-white/60">
+                <div className="flex items-center gap-1.5 truncate mr-2">
+                  <ShieldCheck size={11} className="text-cyan-400 shrink-0 sm:w-[12px] sm:h-[12px]" />
+                  <span className="truncate">{currentStage.material}</span>
                 </div>
-                <span className="font-mono text-[#ff5500] text-[11px] font-semibold">
+                <span className="font-mono text-[#ff5500] text-[9.5px] sm:text-[10.5px] font-semibold shrink-0">
                   Etapa {currentStage.number} / 15
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Bottom */}
-          <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-3 pointer-events-auto pb-2">
+          {/* Bottom Progress Navigation */}
+          <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3 pointer-events-auto">
             <div className="hidden sm:flex items-center gap-2 text-xs text-white/40 uppercase tracking-widest">
               <ChevronDown size={14} className="animate-bounce text-[#ff5500]" />
               <span>Role para explorar o processo</span>
             </div>
 
             {/* Progress dots */}
-            <div className="flex items-center gap-1 bg-black/50 backdrop-blur-md px-3 py-2 rounded-xl border border-white/10">
+            <div className="flex items-center justify-center gap-1 bg-black/60 backdrop-blur-md px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl border border-white/10">
               {STAGES.map((st, idx) => (
                 <div
                   key={st.id}
-                  className={`w-2 h-2 rounded-full transition-all duration-200 ${
+                  className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-all duration-200 ${
                     idx === activeStage
                       ? 'bg-[#ff5500] scale-125 shadow-[0_0_8px_rgba(255,85,0,0.7)]'
                       : idx < activeStage
