@@ -151,20 +151,30 @@ export default function PouringLadle({ debugFlow = false }: { debugFlow?: boolea
   useFrame(({ clock }) => {
     const p = castingState.progress;
 
-    // 1. Ladle Position & Trajectory (Collision-Free Sequence)
+    // 1. Ladle Position & Trajectory (Ref. 15, 16, 17 Kinematics)
     // • p < 0.28: Off-screen right (X = 20)
     // • p in [0.28, 0.33]: Enters to RECEIVE_X (0.70) under furnace spout
     // • p in [0.33, 0.50]: Stationary at RECEIVE_X receiving furnace pour
     // • p in [0.50, 0.52]: Waits while furnace returns upright and begins exit
-    // • p in [0.52, 0.56]: Lifts up and glides to mold sprue station (X = 1.00, Y = 3.18)
-    // • p in [0.56, 0.58]: Stationary hovering precisely above mold sprue (Stage 08)
-    // • p in [0.58, 0.68]: Tilts and pours into mold sprue (Stage 09)
-    // • p > 0.68: Retreats away
+    // • p in [0.52, 0.56]: Lifts up and glides to mold sprue station
+    // • p in [0.56, 0.58]: Stage 08: Axis Aligned — vertical axis & base perfectly centered over sprue (X = 1.00, Y = 3.25)
+    // • p in [0.58, 0.68]: Stage 09 (Ref. 15): Smooth tilt with spout locked directly over sprue mouth (X = 1.00, Y = 2.65)
+    // • p in [0.68, 0.75]: Stage 10 (Ref. 16): Upright stable above sprue while mold fills and ignites
+    // • p in [0.75, 0.80]: Stage 11 (Ref. 17): Moves smoothly away from mold to right (X = 22) after ignition
+    // • p > 0.80: Off-screen
     let posX = 20;
     let posY = RECEIVE_Y;
     let tiltAngle = 0;
     let fillRatio = 0;
     let isVisible = false;
+
+    // Local coordinates of the spout tip relative to ladle center
+    const SPOUT_LOCAL_X = 0.98;
+    const SPOUT_LOCAL_Y = 0.45;
+    // Sprue mouth target coordinates
+    const SPRUE_TARGET_X = MOLD_SPRUE_X; // 1.00
+    const SPRUE_TARGET_Y = 2.98;          // ~0.61 above sprue rim (2.37) for dynamic stream drop
+    const UPRIGHT_HOVER_Y = 3.25;
 
     if (p < 0.28) {
       posX = 20;
@@ -178,27 +188,61 @@ export default function PouringLadle({ debugFlow = false }: { debugFlow?: boolea
       posX = RECEIVE_X;
       posY = RECEIVE_Y;
     } else if (p <= 0.56) {
-      // Smooth arc travel to mold sprue station (X = 1.00, Y = 3.18)
+      // Smooth arc travel to mold sprue station
       const travelT = easeInOut((p - 0.51) / (0.56 - 0.51));
       posX = lerp(RECEIVE_X, MOLD_SPRUE_X, travelT);
-      // Lift vertically first, then settle
-      posY = lerp(RECEIVE_Y, MOLD_HOVER_Y, Math.sin(travelT * (Math.PI / 2)));
+      posY = lerp(RECEIVE_Y, UPRIGHT_HOVER_Y, Math.sin(travelT * (Math.PI / 2)));
     } else if (p <= 0.58) {
-      // Stage 08: Exact precision hover directly over mold sprue
+      // Stage 08: Exact precision axis alignment — base centered over sprue
       posX = MOLD_SPRUE_X;
-      posY = MOLD_HOVER_Y;
+      posY = UPRIGHT_HOVER_Y;
     } else if (p <= 0.68) {
-      // Stage 09: Above mold sprue pouring
+      // Stage 09 (Ref. 15): Tilts smoothly with pouring lip locked over sprue mouth
+      const moldPourT = phaseProgress(p, 'LADLE_POUR');
+      const MAX_TILT = -0.72; // ~41.2 degrees
+
+      let currentTilt = 0;
+      let tiltProgress = 0;
+      if (moldPourT < 0.20) {
+        tiltProgress = easeInOut(moldPourT / 0.20);
+        currentTilt = lerp(0, MAX_TILT, tiltProgress);
+      } else if (moldPourT < 0.85) {
+        tiltProgress = 1.0;
+        currentTilt = MAX_TILT;
+      } else {
+        tiltProgress = 1.0 - easeInOut((moldPourT - 0.85) / 0.15);
+        currentTilt = lerp(0, MAX_TILT, tiltProgress);
+      }
+
+      tiltAngle = currentTilt;
+
+      // Kinematic rotation of spout vector
+      const cosT = Math.cos(currentTilt);
+      const sinT = Math.sin(currentTilt);
+      const rotSpoutX = SPOUT_LOCAL_X * cosT - SPOUT_LOCAL_Y * sinT;
+      const rotSpoutY = SPOUT_LOCAL_X * sinT + SPOUT_LOCAL_Y * cosT;
+
+      // Position pivot so spout tip stays locked right over sprue
+      const tiltedPosX = SPRUE_TARGET_X - rotSpoutX;
+      const tiltedPosY = SPRUE_TARGET_Y - rotSpoutY;
+
+      posX = lerp(MOLD_SPRUE_X, tiltedPosX, tiltProgress);
+      posY = lerp(UPRIGHT_HOVER_Y, tiltedPosY, tiltProgress);
+    } else if (p <= 0.75) {
+      // Stage 10 (Ref. 16): Upright and stable above sprue while mold fills and ignites
       posX = MOLD_SPRUE_X;
-      posY = MOLD_HOVER_Y;
-    } else if (p <= 0.73) {
-      // Exiting scene
-      const exitT = (p - 0.68) / 0.05;
-      posX = lerp(MOLD_SPRUE_X, 22, easeInOut(exitT));
-      posY = MOLD_HOVER_Y;
+      posY = UPRIGHT_HOVER_Y + 0.10;
+      tiltAngle = 0;
+    } else if (p <= 0.80) {
+      // Stage 11 (Ref. 17): After ignition and full fill, ladle moves smoothly away from mold
+      const exitT = easeInOut((p - 0.75) / 0.05);
+      posX = lerp(MOLD_SPRUE_X, 22, exitT);
+      posY = lerp(UPRIGHT_HOVER_Y + 0.10, 4.0, exitT);
+      tiltAngle = 0;
     } else {
       posX = 22;
-      posY = MOLD_HOVER_Y;
+      posY = 4.0;
+      tiltAngle = 0;
     }
 
     // 2. Liquid Metal Level (Filling from furnace, draining into mold)
@@ -224,24 +268,12 @@ export default function PouringLadle({ debugFlow = false }: { debugFlow?: boolea
       isVisible = false;
     }
 
-    // 3. Ladle Tilt when Pouring into Mold (Stage 09: 0.58 -> 0.68)
-    if (p >= 0.58 && p <= 0.68) {
-      const moldPourT = phaseProgress(p, 'LADLE_POUR');
-      if (moldPourT < 0.20) {
-        tiltAngle = lerp(0, -0.76, easeInOut(moldPourT / 0.20));
-      } else if (moldPourT < 0.85) {
-        tiltAngle = -0.76;
-      } else {
-        tiltAngle = lerp(-0.76, 0, (moldPourT - 0.85) / 0.15);
-      }
-    }
-
     if (ladlePivotRef.current) {
       ladlePivotRef.current.position.set(posX, posY, 0);
       ladlePivotRef.current.rotation.z = tiltAngle;
     }
 
-    // 4. Update Dynamic Conical Liquid Geometry
+    // 3. Update Dynamic Conical Liquid Geometry
     if (metalMeshRef.current) {
       metalMeshRef.current.visible = isVisible;
       if (isVisible) {
@@ -249,24 +281,24 @@ export default function PouringLadle({ debugFlow = false }: { debugFlow?: boolea
       }
     }
 
-    // 5. Shader Uniforms
+    // 4. Shader Uniforms
     if (metalShaderMat.current) {
       metalShaderMat.current.uniforms.uTime.value = clock.getElapsedTime();
-      metalShaderMat.current.uniforms.uIntensity.value = isVisible ? 1.0 : 0;
+      metalShaderMat.current.uniforms.uIntensity.value = isVisible ? 1.0 : (p >= 0.68 && p <= 0.75 ? 0.35 : 0);
     }
 
-    // 6. Glowing Lights
+    // 5. Glowing Lights
     // Internal liquid core light
     if (ladleLightRef.current) {
-      ladleLightRef.current.intensity = isVisible ? fillRatio * 6.5 : 0;
+      ladleLightRef.current.intensity = isVisible ? fillRatio * 6.5 : (p >= 0.68 && p <= 0.75 ? 1.2 : 0);
     }
     // Downwards sprue focus light at ladle base (highlights sprue funnel directly below)
     if (sprueFocusLightRef.current) {
-      const isAboveSprue = p >= 0.53 && p <= 0.68;
-      sprueFocusLightRef.current.intensity = isVisible && isAboveSprue ? fillRatio * 7.5 : 0;
+      const isAboveSprue = p >= 0.53 && p <= 0.75;
+      sprueFocusLightRef.current.intensity = isAboveSprue ? (isVisible ? fillRatio * 7.5 : 1.5) : 0;
     }
 
-    // 7. World-space tracking points
+    // 6. World-space tracking points
     spoutMarkerRef.current?.getWorldPosition(pourPoints.ladleSpout.current);
     fillMarkerRef.current?.getWorldPosition(pourPoints.ladleFill.current);
   });
@@ -307,7 +339,7 @@ export default function PouringLadle({ debugFlow = false }: { debugFlow?: boolea
           <mesh material={rimMat} rotation={[0, 0, -Math.PI / 4.5]}>
             <cylinderGeometry args={[0.08, 0.16, 0.35, 16]} />
           </mesh>
-          <mesh ref={spoutMarkerRef} position={[0.38, -0.16, 0]} visible={debugFlow}>
+          <mesh ref={spoutMarkerRef} position={[0.26, -0.12, 0]} visible={debugFlow}>
             <sphereGeometry args={[0.04]} />
             <meshBasicMaterial color="red" />
           </mesh>

@@ -147,17 +147,25 @@ function Riser({
    SAND SURFACE DETAIL — etched lines on the sand giving
    the look of packed/compacted mold surface
 ───────────────────────────────────────────────────────────────── */
-function SandSurfaceLines({ y, mat }: { y: number; mat: THREE.Material }) {
+function SandSurfaceLines({
+  y,
+  mat,
+  groupRef,
+}: {
+  y: number;
+  mat: THREE.Material;
+  groupRef?: React.Ref<THREE.Group>;
+}) {
   // subtle thin raised lines simulating sand grain strata
   const lines = [-1.2, -0.7, -0.2, 0.2, 0.7, 1.2];
   return (
-    <>
+    <group ref={groupRef}>
       {lines.map((z, i) => (
         <mesh key={i} position={[0, y, z]} material={mat}>
           <boxGeometry args={[3.4, 0.012, 0.018]} />
         </mesh>
       ))}
-    </>
+    </group>
   );
 }
 
@@ -166,8 +174,18 @@ function SandSurfaceLines({ y, mat }: { y: number; mat: THREE.Material }) {
 ───────────────────────────────────────────────────────────────── */
 export default function MoldAssembly({ debugFlow = false }: { debugFlow?: boolean }) {
   const mainGroupRef = useRef<THREE.Group>(null);
+  const dragRef = useRef<THREE.Group>(null);
   const copeRef = useRef<THREE.Group>(null);
   const sprueMarkerRef = useRef<THREE.Mesh>(null);
+  const cavityNegativeRef = useRef<THREE.Mesh>(null);
+  const cavityPadRef = useRef<THREE.Mesh>(null);
+  const cavityGhostRef = useRef<THREE.Mesh>(null);
+  const moltenSprueRef = useRef<THREE.Mesh>(null);
+  const moltenRunnerRef = useRef<THREE.Mesh>(null);
+  const moltenRiser1Ref = useRef<THREE.Mesh>(null);
+  const moltenRiser2Ref = useRef<THREE.Mesh>(null);
+  const sandLinesDragRef = useRef<THREE.Group>(null);
+  const sandLinesCopeRef = useRef<THREE.Group>(null);
   const pourPoints = usePourPoints();
 
   /* ── Materials ── */
@@ -184,7 +202,6 @@ export default function MoldAssembly({ debugFlow = false }: { debugFlow?: boolea
       color: '#6b5540',
       roughness: 0.96,
       metalness: 0.03,
-      // slight bumpiness via roughness contrast
     });
 
     // Cavity / runner surface — deep dark shadow to show depth
@@ -216,7 +233,48 @@ export default function MoldAssembly({ debugFlow = false }: { debugFlow?: boolea
       metalness: 0.95,
     });
 
-    return { frameMat, sandMat, cavityMat, sandTopMat, runnerMat, sprueMat };
+    // Cope & Drag inspection materials for X-Ray transparency during pouring/filling/cooling
+    const copeSandMat = sandMat.clone();
+    const copeFrameMat = frameMat.clone();
+    const dragSandMat = sandMat.clone();
+    const dragFrameMat = frameMat.clone();
+    const sandTopDragMat = sandTopMat.clone();
+    const sandTopCopeMat = sandTopMat.clone();
+
+    // Subtle luminous ghost wireframe of the cavity visible during X-ray inspection
+    const cavityGhostMat = new THREE.MeshBasicMaterial({
+      color: '#ff6600',
+      wireframe: true,
+      transparent: true,
+      opacity: 0.22,
+      depthWrite: false,
+    });
+
+    // Incandescent Molten Runner / Sprue Material
+    const moltenRunnerMat = new THREE.MeshStandardMaterial({
+      color: '#ff6600',
+      emissive: '#ff4400',
+      emissiveIntensity: 3.5,
+      roughness: 0.2,
+      metalness: 0.8,
+    });
+
+    return {
+      frameMat,
+      sandMat,
+      cavityMat,
+      sandTopMat,
+      runnerMat,
+      sprueMat,
+      copeSandMat,
+      copeFrameMat,
+      dragSandMat,
+      dragFrameMat,
+      sandTopDragMat,
+      sandTopCopeMat,
+      cavityGhostMat,
+      moltenRunnerMat,
+    };
   }, []);
 
   /* ── Gear cavity geometry (reused for both molds) ── */
@@ -253,6 +311,92 @@ export default function MoldAssembly({ debugFlow = false }: { debugFlow?: boolea
     else if (p <= 0.55) moldX = lerp(-20, 0, easeOut(Math.min(1, (p - 0.50) / 0.05)));
     else moldX = 0;
 
+    // Semi-transparent X-Ray inspection mode during pouring, filling & cooling (0.585 -> 0.82)
+    const isCastingActive = p >= 0.585 && p <= 0.82;
+    let inspectAlpha = 1.0;
+    if (isCastingActive) {
+      if (p < 0.605) {
+        inspectAlpha = lerp(1.0, 0.18, (p - 0.585) / 0.02);
+      } else if (p > 0.80) {
+        inspectAlpha = lerp(0.18, 1.0, (p - 0.80) / 0.02);
+      } else {
+        inspectAlpha = 0.18;
+      }
+    }
+    const isTransparent = inspectAlpha < 0.99;
+
+    // Cope & Drag sand materials
+    mats.copeSandMat.transparent = isTransparent;
+    mats.copeSandMat.opacity = inspectAlpha;
+    mats.copeSandMat.depthWrite = !isTransparent;
+
+    mats.dragSandMat.transparent = isTransparent;
+    mats.dragSandMat.opacity = inspectAlpha;
+    mats.dragSandMat.depthWrite = !isTransparent;
+
+    mats.sandTopCopeMat.transparent = isTransparent;
+    mats.sandTopCopeMat.opacity = isTransparent ? inspectAlpha * 0.4 : 1.0;
+    mats.sandTopCopeMat.depthWrite = !isTransparent;
+
+    mats.sandTopDragMat.transparent = isTransparent;
+    mats.sandTopDragMat.opacity = isTransparent ? inspectAlpha * 0.4 : 1.0;
+    mats.sandTopDragMat.depthWrite = !isTransparent;
+
+    // Outer metal frame walls
+    const frameAlpha = isTransparent ? 0.28 : 1.0;
+    mats.copeFrameMat.transparent = isTransparent;
+    mats.copeFrameMat.opacity = frameAlpha;
+    mats.copeFrameMat.depthWrite = !isTransparent;
+
+    mats.dragFrameMat.transparent = isTransparent;
+    mats.dragFrameMat.opacity = frameAlpha;
+    mats.dragFrameMat.depthWrite = !isTransparent;
+
+    // Cavity ghost wireframe
+    mats.cavityGhostMat.visible = isTransparent;
+
+    // Toggle internal meshes so they do not occlude the filling piece
+    if (cavityNegativeRef.current) {
+      cavityNegativeRef.current.visible = !isCastingActive && (p < 0.585 || p >= 0.94);
+    }
+    if (cavityPadRef.current) {
+      cavityPadRef.current.visible = !isCastingActive && (p < 0.585 || p >= 0.94);
+    }
+    if (sandLinesDragRef.current) {
+      sandLinesDragRef.current.visible = !isCastingActive;
+    }
+    if (sandLinesCopeRef.current) {
+      sandLinesCopeRef.current.visible = !isCastingActive;
+    }
+
+    // Incandescent sprue feed column inside cope
+    if (moltenSprueRef.current) {
+      moltenSprueRef.current.visible = isCastingActive && p >= 0.59 && p <= 0.75;
+    }
+    // Incandescent runner channel connecting sprue to gear
+    if (moltenRunnerRef.current) {
+      moltenRunnerRef.current.visible = isCastingActive && p >= 0.59 && p <= 0.82;
+    }
+    // Molten metal in risers when filled
+    if (moltenRiser1Ref.current) {
+      moltenRiser1Ref.current.visible = isCastingActive && p >= 0.67 && p <= 0.82;
+    }
+    if (moltenRiser2Ref.current) {
+      moltenRiser2Ref.current.visible = isCastingActive && p >= 0.67 && p <= 0.82;
+    }
+
+    // Molten runner emission & cooling color
+    if (p >= 0.585 && p <= 0.75) {
+      mats.moltenRunnerMat.emissiveIntensity = 3.5;
+      mats.moltenRunnerMat.color.setRGB(1.0, 0.4, 0.0);
+    } else if (p > 0.75 && p <= 0.82) {
+      const coolT = (p - 0.75) / 0.07;
+      mats.moltenRunnerMat.emissiveIntensity = lerp(3.5, 0.0, coolT);
+      mats.moltenRunnerMat.color.setRGB(lerp(1.0, 0.18, coolT), lerp(0.4, 0.2, coolT), lerp(0.0, 0.24, coolT));
+    } else {
+      mats.moltenRunnerMat.emissiveIntensity = 0;
+    }
+
     if (mainGroupRef.current) mainGroupRef.current.position.x = moldX;
     if (copeRef.current) copeRef.current.position.y = copeY;
     if (sprueMarkerRef.current) {
@@ -260,7 +404,22 @@ export default function MoldAssembly({ debugFlow = false }: { debugFlow?: boolea
     }
   });
 
-  const { frameMat, sandMat, cavityMat, sandTopMat, runnerMat, sprueMat } = mats;
+  const {
+    frameMat,
+    sandMat,
+    cavityMat,
+    sandTopMat,
+    runnerMat,
+    sprueMat,
+    copeSandMat,
+    copeFrameMat,
+    dragSandMat,
+    dragFrameMat,
+    sandTopDragMat,
+    sandTopCopeMat,
+    cavityGhostMat,
+    moltenRunnerMat,
+  } = mats;
 
   /* ─────────────────────────────────────────────────────────────
      DRAG (bottom flask): frame + sand body + gear cavity + runners
@@ -281,60 +440,66 @@ export default function MoldAssembly({ debugFlow = false }: { debugFlow?: boolea
       {/* ═══════════════════════════════════════════
           DRAG (BOTTOM FLASK)
       ══════════════════════════════════════════════ */}
-      <group position={[0, 0, 0]}>
+      <group ref={dragRef} position={[0, 0, 0]}>
 
         {/* Bottom metal frame plate */}
-        <mesh material={frameMat} position={[0, -FRAME_T / 2, 0]}>
+        <mesh material={dragFrameMat} position={[0, -FRAME_T / 2, 0]} renderOrder={20}>
           <boxGeometry args={[DRAG_W, FRAME_T, DRAG_D]} />
         </mesh>
 
         {/* Sand body fill */}
-        <mesh material={sandMat} position={[0, SAND_H / 2, 0]}>
+        <mesh material={dragSandMat} position={[0, SAND_H / 2, 0]} renderOrder={20}>
           <boxGeometry args={[DRAG_W - 0.18, SAND_H, DRAG_D - 0.18]} />
         </mesh>
 
-        {/* Top sand surface — slightly lighter tone */}
-        <mesh material={sandTopMat} position={[0, SAND_H + 0.004, 0]}>
+        {/* Top sand surface */}
+        <mesh material={sandTopDragMat} position={[0, SAND_H + 0.004, 0]} renderOrder={20}>
           <boxGeometry args={[DRAG_W - 0.18, 0.01, DRAG_D - 0.18]} />
         </mesh>
 
         {/* Side frame walls */}
-        {/* Front wall */}
-        <mesh material={frameMat} position={[0, SAND_H / 2, DRAG_D / 2 + 0.04]}>
+        <mesh material={dragFrameMat} position={[0, SAND_H / 2, DRAG_D / 2 + 0.04]} renderOrder={20}>
           <boxGeometry args={[DRAG_W, SAND_H + FRAME_T * 2, 0.1]} />
         </mesh>
-        {/* Back wall */}
-        <mesh material={frameMat} position={[0, SAND_H / 2, -DRAG_D / 2 - 0.04]}>
+        <mesh material={dragFrameMat} position={[0, SAND_H / 2, -DRAG_D / 2 - 0.04]} renderOrder={20}>
           <boxGeometry args={[DRAG_W, SAND_H + FRAME_T * 2, 0.1]} />
         </mesh>
-        {/* Left wall */}
-        <mesh material={frameMat} position={[-DRAG_W / 2 - 0.04, SAND_H / 2, 0]}>
+        <mesh material={dragFrameMat} position={[-DRAG_W / 2 - 0.04, SAND_H / 2, 0]} renderOrder={20}>
           <boxGeometry args={[0.1, SAND_H + FRAME_T * 2, DRAG_D + 0.18]} />
         </mesh>
-        {/* Right wall */}
-        <mesh material={frameMat} position={[DRAG_W / 2 + 0.04, SAND_H / 2, 0]}>
+        <mesh material={dragFrameMat} position={[DRAG_W / 2 + 0.04, SAND_H / 2, 0]} renderOrder={20}>
           <boxGeometry args={[0.1, SAND_H + FRAME_T * 2, DRAG_D + 0.18]} />
         </mesh>
 
         {/* ── GEAR CAVITY — the main impression ── */}
         {/* Cavity base platform (dark sand pad) */}
-        <mesh material={cavityMat} position={[0, SAND_H - 0.025, 0]}>
+        <mesh ref={cavityPadRef} material={cavityMat} position={[0, SAND_H - 0.025, 0]}>
           <cylinderGeometry args={[1.18, 1.18, 0.055, 40]} />
         </mesh>
 
         {/* Actual extruded gear negative (sits proud of sand by depth) */}
-        <primitive
-          object={new THREE.Mesh(gearCavityGeom, cavityMat)}
+        <mesh
+          ref={cavityNegativeRef}
+          geometry={gearCavityGeom}
+          material={cavityMat}
           position={[0, SAND_H - 0.01, 0]}
         />
 
-        {/* Center hole marker — very deep dark circle */}
+        {/* Cavity ghost wireframe visible during X-Ray inspection */}
+        <mesh
+          ref={cavityGhostRef}
+          geometry={gearCavityGeom}
+          material={cavityGhostMat}
+          position={[0, SAND_H - 0.01, 0]}
+          renderOrder={15}
+        />
+
+        {/* Center hole marker */}
         <mesh material={cavityMat} position={[0, SAND_H + 0.005, 0]}>
           <cylinderGeometry args={[0.21, 0.21, 0.04, 20]} />
         </mesh>
 
         {/* ── RUNNERS / CHANNELS ── */}
-        {/* Main runner from sprue hole to gear — horizontal */}
         <RunnerChannel
           from={[1.0, SAND_H + 0.0, 0.0]}
           to={[1.15, SAND_H + 0.0, 0.0]}
@@ -342,7 +507,6 @@ export default function MoldAssembly({ debugFlow = false }: { debugFlow?: boolea
           depth={0.1}
           material={runnerMat}
         />
-        {/* Gate channel reaching into gear cavity */}
         <RunnerChannel
           from={[1.0, SAND_H, 0]}
           to={[1.16, SAND_H, 0]}
@@ -350,6 +514,16 @@ export default function MoldAssembly({ debugFlow = false }: { debugFlow?: boolea
           depth={0.09}
           material={runnerMat}
         />
+
+        {/* Incandescent Molten Runner Feed connecting sprue to gear cavity */}
+        <mesh
+          ref={moltenRunnerRef}
+          position={[0.55, SAND_H + 0.012, 0]}
+          material={moltenRunnerMat}
+          renderOrder={10}
+        >
+          <boxGeometry args={[0.92, 0.028, 0.10]} />
+        </mesh>
 
         {/* Left branch runner */}
         <RunnerChannel
@@ -381,7 +555,7 @@ export default function MoldAssembly({ debugFlow = false }: { debugFlow?: boolea
         <Riser position={[-1.12, SAND_H + 0.16, -0.9]} mat={cavityMat} frameMat={frameMat} />
 
         {/* ── SAND SURFACE ETCH LINES (grain texture) ── */}
-        <SandSurfaceLines y={SAND_H + 0.007} mat={sandTopMat} />
+        <SandSurfaceLines y={SAND_H + 0.007} mat={sandTopMat} groupRef={sandLinesDragRef} />
 
         {/* ── ALIGNMENT GUIDE PINS ── */}
         <DragCornerPins mat={frameMat} />
@@ -392,32 +566,32 @@ export default function MoldAssembly({ debugFlow = false }: { debugFlow?: boolea
       ══════════════════════════════════════════════ */}
       <group ref={copeRef} position={[0, 2.8, 0]}>
 
-        {/* Sand body */}
-        <mesh material={sandMat} position={[0, COPE_SAND_H / 2, 0]}>
+        {/* Sand body (uses copeSandMat for X-Ray inspection transparency) */}
+        <mesh material={copeSandMat} position={[0, COPE_SAND_H / 2, 0]} renderOrder={20}>
           <boxGeometry args={[DRAG_W - 0.18, COPE_SAND_H, DRAG_D - 0.18]} />
         </mesh>
 
         {/* Bottom sand surface */}
-        <mesh material={sandTopMat} position={[0, -0.005, 0]}>
+        <mesh material={sandTopCopeMat} position={[0, -0.005, 0]} renderOrder={20}>
           <boxGeometry args={[DRAG_W - 0.18, 0.012, DRAG_D - 0.18]} />
         </mesh>
 
-        {/* Side frame walls — cope */}
-        <mesh material={frameMat} position={[0, COPE_SAND_H / 2, DRAG_D / 2 + 0.04]}>
+        {/* Side frame walls — cope (uses copeFrameMat) */}
+        <mesh material={copeFrameMat} position={[0, COPE_SAND_H / 2, DRAG_D / 2 + 0.04]} renderOrder={20}>
           <boxGeometry args={[DRAG_W, COPE_SAND_H + FRAME_T * 2, 0.1]} />
         </mesh>
-        <mesh material={frameMat} position={[0, COPE_SAND_H / 2, -DRAG_D / 2 - 0.04]}>
+        <mesh material={copeFrameMat} position={[0, COPE_SAND_H / 2, -DRAG_D / 2 - 0.04]} renderOrder={20}>
           <boxGeometry args={[DRAG_W, COPE_SAND_H + FRAME_T * 2, 0.1]} />
         </mesh>
-        <mesh material={frameMat} position={[-DRAG_W / 2 - 0.04, COPE_SAND_H / 2, 0]}>
+        <mesh material={copeFrameMat} position={[-DRAG_W / 2 - 0.04, COPE_SAND_H / 2, 0]} renderOrder={20}>
           <boxGeometry args={[0.1, COPE_SAND_H + FRAME_T * 2, DRAG_D + 0.18]} />
         </mesh>
-        <mesh material={frameMat} position={[DRAG_W / 2 + 0.04, COPE_SAND_H / 2, 0]}>
+        <mesh material={copeFrameMat} position={[DRAG_W / 2 + 0.04, COPE_SAND_H / 2, 0]} renderOrder={20}>
           <boxGeometry args={[0.1, COPE_SAND_H + FRAME_T * 2, DRAG_D + 0.18]} />
         </mesh>
 
         {/* Top metal lid plate */}
-        <mesh material={frameMat} position={[0, COPE_SAND_H + FRAME_T / 2, 0]}>
+        <mesh material={copeFrameMat} position={[0, COPE_SAND_H + FRAME_T / 2, 0]} renderOrder={20}>
           <boxGeometry args={[DRAG_W, FRAME_T, DRAG_D]} />
         </mesh>
 
@@ -426,9 +600,70 @@ export default function MoldAssembly({ debugFlow = false }: { debugFlow?: boolea
           <SprueCup mat={sprueMat} />
         </group>
 
+        {/* ── TOP RISER RELIEF VENTS ON TOP LID ── */}
+        <group position={[-1.12, COPE_SAND_H + FRAME_T, 0.9]}>
+          <mesh material={copeFrameMat} position={[0, 0.08, 0]}>
+            <cylinderGeometry args={[0.16, 0.18, 0.16, 16]} />
+          </mesh>
+          <mesh material={cavityMat} position={[0, 0.165, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <circleGeometry args={[0.13, 16]} />
+          </mesh>
+          <mesh material={sprueMat} position={[0, 0.17, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[0.15, 0.02, 8, 20]} />
+          </mesh>
+        </group>
+
+        <group position={[-1.12, COPE_SAND_H + FRAME_T, -0.9]}>
+          <mesh material={copeFrameMat} position={[0, 0.08, 0]}>
+            <cylinderGeometry args={[0.16, 0.18, 0.16, 16]} />
+          </mesh>
+          <mesh material={cavityMat} position={[0, 0.165, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <circleGeometry args={[0.13, 16]} />
+          </mesh>
+          <mesh material={sprueMat} position={[0, 0.17, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[0.15, 0.02, 8, 20]} />
+          </mesh>
+        </group>
+
+        {/* Riser through-holes in cope sand */}
+        <mesh material={cavityMat} position={[-1.12, COPE_SAND_H / 2, 0.9]}>
+          <cylinderGeometry args={[0.14, 0.14, COPE_SAND_H + 0.02, 14]} />
+        </mesh>
+        <mesh material={cavityMat} position={[-1.12, COPE_SAND_H / 2, -0.9]}>
+          <cylinderGeometry args={[0.14, 0.14, COPE_SAND_H + 0.02, 14]} />
+        </mesh>
+
+        {/* Incandescent rising metal inside top risers */}
+        <mesh
+          ref={moltenRiser1Ref}
+          position={[-1.12, COPE_SAND_H * 0.45, 0.9]}
+          material={moltenRunnerMat}
+          renderOrder={10}
+        >
+          <cylinderGeometry args={[0.10, 0.10, COPE_SAND_H * 0.9, 14]} />
+        </mesh>
+        <mesh
+          ref={moltenRiser2Ref}
+          position={[-1.12, COPE_SAND_H * 0.45, -0.9]}
+          material={moltenRunnerMat}
+          renderOrder={10}
+        >
+          <cylinderGeometry args={[0.10, 0.10, COPE_SAND_H * 0.9, 14]} />
+        </mesh>
+
         {/* Sprue through-hole in cope sand */}
         <mesh material={cavityMat} position={[1.0, COPE_SAND_H / 2, 0]}>
           <cylinderGeometry args={[0.11, 0.11, COPE_SAND_H + 0.02, 14]} />
+        </mesh>
+
+        {/* Incandescent sprue feed column inside cope during pouring */}
+        <mesh
+          ref={moltenSprueRef}
+          position={[1.0, COPE_SAND_H / 2, 0]}
+          material={moltenRunnerMat}
+          renderOrder={10}
+        >
+          <cylinderGeometry args={[0.075, 0.065, COPE_SAND_H, 16]} />
         </mesh>
 
         {/* Guide pin holes (receives the drag pins) */}
@@ -444,7 +679,7 @@ export default function MoldAssembly({ debugFlow = false }: { debugFlow?: boolea
         ))}
 
         {/* Surface etch lines on cope underside */}
-        <SandSurfaceLines y={0.008} mat={sandTopMat} />
+        <SandSurfaceLines y={0.008} mat={sandTopMat} groupRef={sandLinesCopeRef} />
 
         {/* Invisible marker for sprue world position */}
         <mesh

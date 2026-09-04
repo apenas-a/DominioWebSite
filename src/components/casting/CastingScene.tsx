@@ -7,6 +7,7 @@ import Furnace from './components/Furnace';
 import PouringLadle from './components/PouringLadle';
 import PourStream from './components/PourStream';
 import CameraRig from './components/CameraRig';
+import MoldIgnitionParticles from './components/MoldIgnitionParticles';
 import FinishedGear from './components/FinishedGear';
 import SceneLighting from './components/SceneLighting';
 
@@ -31,6 +32,7 @@ export default function CastingScene({ progressRef, debug = false }: CastingScen
       <Furnace debugFlow={debug} />
       <PouringLadle debugFlow={debug} />
       <PourStream />
+      <MoldIgnitionParticles />
       <FinishedGear />
       
       {/* Floor */}

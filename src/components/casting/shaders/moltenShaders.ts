@@ -172,3 +172,129 @@ export const heatGlowShader = {
     }
   `,
 };
+
+export const gearCastingShader = {
+  uniforms: () => ({
+    uTime: { value: 0 },
+    uFillProgress: { value: 0.0 }, // 0.0 to 1.0 (fills dente por dente)
+    uTemperature: { value: 1.0 },  // 1.0 (~1400°C) to 0.0 (25°C)
+    uThickness: { value: 0.28 },
+  }),
+  vertexShader: `
+    varying vec3 vLocalPos;
+    varying vec3 vWorldPos;
+    varying vec3 vNormal;
+    varying vec2 vUv;
+
+    void main() {
+      vLocalPos = position;
+      vNormal = normalize(normalMatrix * normal);
+      vUv = uv;
+      vec4 worldPos = modelMatrix * vec4(position, 1.0);
+      vWorldPos = worldPos.xyz;
+      gl_Position = projectionMatrix * viewMatrix * worldPos;
+    }
+  `,
+  fragmentShader: `
+    varying vec3 vLocalPos;
+    varying vec3 vWorldPos;
+    varying vec3 vNormal;
+    varying vec2 vUv;
+
+    uniform float uTime;
+    uniform float uFillProgress;
+    uniform float uTemperature;
+    uniform float uThickness;
+
+    float hash(vec2 p) {
+      return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+    }
+
+    void main() {
+      // If not started filling, discard
+      if (uFillProgress <= 0.001) {
+        discard;
+      }
+
+      // 1. Tooth-by-tooth and vertical fill progression (Ref. 16)
+      // Angle theta: 0 is at +X (where sprue runner gate connects)
+      float angle = atan(vLocalPos.z, vLocalPos.x);
+      // Angular distance from gate: 0 at +X, 1 at -X (opposing side)
+      float angDist = abs(angle) / 3.14159265;
+
+      // Normalized height in cavity: 0 at bottom, 1 at top
+      float halfH = uThickness * 0.5;
+      float normH = clamp((vLocalPos.y + halfH) / uThickness, 0.0, 1.0);
+
+      // Fluid fills through each tooth and rises simultaneously
+      float fillThreshold = normH * 0.40 + angDist * 0.60;
+
+      // Discard fragments not yet reached by the advancing molten metal
+      if (uFillProgress < 0.999 && fillThreshold > uFillProgress) {
+        discard;
+      }
+
+      // 2. Leading molten meniscus wave sizzle
+      float frontDist = uFillProgress - fillThreshold;
+      float isFront = (uFillProgress < 0.999 && frontDist >= 0.0 && frontDist < 0.05) ? 1.0 : 0.0;
+
+      // 3. Thermal Radiation & Color Gradient (~1400°C -> 25°C) (Ref. 17)
+      vec3 whiteHot = vec3(1.0, 0.96, 0.88);
+      vec3 moltenYellow = vec3(1.0, 0.72, 0.15);
+      vec3 moltenOrange = vec3(0.98, 0.38, 0.04);
+      vec3 dullCherry = vec3(0.55, 0.06, 0.01);
+      vec3 coolIron = vec3(0.18, 0.20, 0.24);
+
+      vec3 thermalCol;
+      float emissiveMul;
+
+      if (uTemperature > 0.75) {
+        float t = (uTemperature - 0.75) / 0.25;
+        thermalCol = mix(moltenYellow, whiteHot, t);
+        emissiveMul = 3.5 + t * 2.0;
+      } else if (uTemperature > 0.40) {
+        float t = (uTemperature - 0.40) / 0.35;
+        thermalCol = mix(moltenOrange, moltenYellow, t);
+        emissiveMul = 1.6 + t * 1.9;
+      } else if (uTemperature > 0.15) {
+        float t = (uTemperature - 0.15) / 0.25;
+        thermalCol = mix(dullCherry, moltenOrange, t);
+        emissiveMul = 0.3 + t * 1.3;
+      } else {
+        float t = uTemperature / 0.15;
+        thermalCol = mix(coolIron, dullCherry, t);
+        emissiveMul = t * 0.3;
+      }
+
+      // Liquid convective ripple noise when hot
+      vec2 noiseCoord = vLocalPos.xz * 6.0 + vec2(uTime * 0.8, sin(uTime * 0.5));
+      float n = hash(floor(noiseCoord));
+      if (uTemperature > 0.5) {
+        thermalCol = mix(thermalCol, whiteHot, n * 0.18 * (uTemperature - 0.5) * 2.0);
+      }
+
+      // Highlight the leading meniscus wave
+      if (isFront > 0.5) {
+        thermalCol = mix(thermalCol, whiteHot, 0.85);
+        emissiveMul = 6.0;
+      }
+
+      // Fresnel rim glow
+      vec3 viewDir = normalize(cameraPosition - vWorldPos);
+      float fresnel = 1.0 - max(dot(viewDir, vNormal), 0.0);
+      fresnel = pow(fresnel, 2.2);
+
+      vec3 finalEmissive = (thermalCol + vec3(1.0, 0.6, 0.1) * fresnel * uTemperature) * emissiveMul;
+
+      // Base shading when cooled
+      vec3 lightDir = normalize(vec3(5.0, 8.0, 5.0));
+      float diff = max(dot(vNormal, lightDir), 0.15);
+      vec3 diffuseCol = coolIron * diff;
+
+      vec3 finalColor = mix(diffuseCol, finalEmissive, clamp(uTemperature * 1.2 + isFront, 0.0, 1.0));
+
+      gl_FragColor = vec4(finalColor, 1.0);
+    }
+  `,
+};
+

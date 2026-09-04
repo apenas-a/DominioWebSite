@@ -9,11 +9,11 @@ export interface GearParams {
 }
 
 export const DEFAULT_GEAR_PARAMS: GearParams = {
-  teethCount: 12,
-  innerRadius: 0.25,
-  hubRadius: 0.55,
-  outerRadius: 0.95,
-  thickness: 0.3,
+  teethCount: 16,
+  innerRadius: 0.22,
+  hubRadius: 0.62,
+  outerRadius: 1.05,
+  thickness: 0.28,
 };
 
 export function createGearShape2D(params?: Partial<GearParams>): THREE.Shape {
