@@ -138,15 +138,15 @@ export default function CastingProcess() {
         </div>
 
         {/* HUD Overlay */}
-        <div className="relative z-10 w-full h-full flex flex-col justify-between p-3.5 pb-20 sm:p-8 md:p-12 sm:pb-8 pointer-events-none">
+        <div className="relative z-10 w-full h-full flex flex-col justify-between p-3.5 pt-20 pb-32 sm:p-8 md:p-12 sm:pb-8 pointer-events-none">
           {/* Top Header */}
           <div className="flex items-center justify-between pointer-events-auto">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#ff5500]/30 bg-[#ff5500]/10 backdrop-blur-md text-[11px] uppercase tracking-[0.2em] text-[#ff5500] mb-2">
+              <div className="hidden sm:inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#ff5500]/30 bg-[#ff5500]/10 backdrop-blur-md text-[11px] uppercase tracking-[0.2em] text-[#ff5500] mb-2">
                 <Layers size={13} />
                 Processo de Fundição 3D
               </div>
-              <h1 className="font-heading text-xl sm:text-2xl md:text-3xl font-bold uppercase tracking-tight text-white">
+              <h1 className="font-heading text-lg sm:text-2xl md:text-3xl font-bold uppercase tracking-tight text-white">
                 Fundição de <span className="text-[#ff5500]">Engrenagem</span>
               </h1>
             </div>
@@ -156,7 +156,7 @@ export default function CastingProcess() {
           </div>
 
           {/* Bottom Card on Mobile / Center Left on Desktop */}
-          <div className="mt-auto mb-1.5 sm:my-auto w-full max-w-[360px] sm:max-w-md self-center sm:self-start pointer-events-auto">
+          <div className="mt-auto mb-3 sm:my-auto w-full max-w-[380px] sm:max-w-md self-center sm:self-start pointer-events-auto">
             <div className="bg-black/75 backdrop-blur-xl border border-white/10 rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-2xl">
               <div className="flex items-center justify-between mb-2 sm:mb-2.5 pb-2 sm:pb-2.5 border-b border-white/10">
                 <div className="flex items-center gap-2 sm:gap-2.5">
