@@ -125,7 +125,7 @@ export default function PouringLadle({ debugFlow = false }: { debugFlow?: boolea
   );
 
   // ── Materials ────────────────────────────────────────────────
-  const { bodyMat, refractoryMat, rimMat, frameMat } = useMemo(() => ({
+  const { bodyMat, refractoryMat, rimMat, frameMat, bandMat, mechanismMat } = useMemo(() => ({
     bodyMat: new THREE.MeshStandardMaterial({
       color: '#1e2129',
       roughness: 0.60,
@@ -147,6 +147,16 @@ export default function PouringLadle({ debugFlow = false }: { debugFlow?: boolea
       color: '#11151d',
       roughness: 0.50,
       metalness: 0.84,
+    }),
+    bandMat: new THREE.MeshStandardMaterial({
+      color: '#303846',
+      roughness: 0.32,
+      metalness: 0.94,
+    }),
+    mechanismMat: new THREE.MeshStandardMaterial({
+      color: '#8b350f',
+      roughness: 0.36,
+      metalness: 0.78,
     }),
   }), []);
 
@@ -334,6 +344,18 @@ export default function PouringLadle({ debugFlow = false }: { debugFlow?: boolea
           <cylinderGeometry args={[R_TOP_OUTER, R_BOT_OUTER, HEIGHT, 36, 1, true]} />
         </mesh>
 
+        {/* Heavy reinforcing hoops give the vessel the mass of a foundry ladle. */}
+        {[-0.34, 0.03, 0.37].map((y, index) => (
+          <mesh
+            key={y}
+            position={[0, y, 0]}
+            rotation={[Math.PI / 2, 0, 0]}
+            material={bandMat}
+          >
+            <torusGeometry args={[R_BOT_OUTER + 0.10 + index * 0.065, 0.045, 10, 36]} />
+          </mesh>
+        ))}
+
         {/* ═══ 2. INNER REFRACTORY LINING (BackSide visible inside) ═══ */}
         <mesh material={refractoryMat}>
           <cylinderGeometry
@@ -352,7 +374,12 @@ export default function PouringLadle({ debugFlow = false }: { debugFlow?: boolea
 
         {/* ═══ 4. TOP COLLAR & MOUTH RIM ═══ */}
         <mesh position={[0, HEIGHT / 2, 0]} rotation={[Math.PI / 2, 0, 0]} material={rimMat}>
-          <torusGeometry args={[R_TOP_OUTER - 0.01, 0.065, 16, 36]} />
+          <torusGeometry args={[R_TOP_OUTER - 0.01, 0.085, 16, 36]} />
+        </mesh>
+
+        {/* Thick foot ring, visually separated from the refractory floor. */}
+        <mesh position={[0, -HEIGHT / 2 + 0.04, 0]} material={bandMat}>
+          <cylinderGeometry args={[R_BOT_OUTER + 0.10, R_BOT_OUTER + 0.14, 0.14, 32]} />
         </mesh>
 
         {/* ═══ 5. POURING LIP SPOUT ═══ */}
@@ -371,30 +398,48 @@ export default function PouringLadle({ debugFlow = false }: { debugFlow?: boolea
           <meshBasicMaterial color="cyan" />
         </mesh>
 
-        {/* ═══ 6. TRUNNION ARM, LIFTING YOKE & SUPPORT RINGS ═══ */}
+        {/* ═══ 6. TRUNNION ARM, LIFTING YOKE & POURING GEAR ═══ */}
         <mesh position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]} material={frameMat}>
-          <cylinderGeometry args={[0.065, 0.065, 2.15, 14]} />
+          <cylinderGeometry args={[0.09, 0.09, 2.50, 16]} />
         </mesh>
-        <mesh position={[0, 0, 1.08]} material={rimMat}>
-          <sphereGeometry args={[0.08, 12, 12]} />
+        <mesh position={[0, 0, 1.25]} material={bandMat}>
+          <sphereGeometry args={[0.14, 14, 14]} />
         </mesh>
-        <mesh position={[0, 0, -1.08]} material={rimMat}>
-          <sphereGeometry args={[0.08, 12, 12]} />
+        <mesh position={[0, 0, -1.25]} material={bandMat}>
+          <sphereGeometry args={[0.14, 14, 14]} />
         </mesh>
         {[-1, 1].map((side) => (
-          <group key={side} position={[-0.10, 0.18, side * 1.08]}>
-            <mesh position={[0, 0.48, 0]} material={frameMat}>
-              <boxGeometry args={[0.09, 0.88, 0.12]} />
+          <group key={side} position={[-0.12, 0.14, side * 1.22]}>
+            <mesh position={[0, 0.50, 0]} rotation={[0, 0, side * 0.13]} material={frameMat}>
+              <boxGeometry args={[0.14, 1.02, 0.18]} />
             </mesh>
-            <mesh position={[0.28, 0.87, 0]} material={frameMat}>
-              <boxGeometry args={[0.65, 0.10, 0.12]} />
+            <mesh position={[0.30, 0.90, 0]} rotation={[0, 0, side * 0.10]} material={frameMat}>
+              <boxGeometry args={[0.78, 0.14, 0.18]} />
             </mesh>
           </group>
         ))}
 
+        {/* Front-side manual gearbox and handwheel, inspired by pouring ladles. */}
+        <group position={[-0.14, 0.06, 1.34]}>
+          <mesh rotation={[Math.PI / 2, 0, 0]} material={mechanismMat}>
+            <cylinderGeometry args={[0.26, 0.30, 0.24, 16]} />
+          </mesh>
+          <mesh position={[0, 0, 0.17]} rotation={[Math.PI / 2, 0, 0]} material={bandMat}>
+            <cylinderGeometry args={[0.12, 0.12, 0.10, 14]} />
+          </mesh>
+          <mesh position={[0, 0, 0.25]} material={mechanismMat}>
+            <torusGeometry args={[0.46, 0.045, 10, 28]} />
+          </mesh>
+          {[0, Math.PI / 2, Math.PI / 4, -Math.PI / 4].map((angle) => (
+            <mesh key={angle} position={[0, 0, 0.25]} rotation={[0, 0, angle]} material={mechanismMat}>
+              <boxGeometry args={[0.80, 0.045, 0.045]} />
+            </mesh>
+          ))}
+        </group>
+
         {/* Base reinforcing band */}
         <mesh position={[0, -HEIGHT / 2 + 0.05, 0]} rotation={[Math.PI / 2, 0, 0]} material={rimMat}>
-          <torusGeometry args={[R_BOT_OUTER + 0.04, 0.05, 12, 36]} />
+          <torusGeometry args={[R_BOT_OUTER + 0.10, 0.06, 12, 36]} />
         </mesh>
 
         {/* ═══ 7. DYNAMIC ADAPTIVE CONICAL LIQUID METAL MESH ═══ */}
