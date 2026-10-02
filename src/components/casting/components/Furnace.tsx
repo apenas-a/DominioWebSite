@@ -52,7 +52,7 @@ export default function Furnace({ debugFlow = false }: { debugFlow?: boolean }) 
   );
 
   // ── Materials ────────────────────────────────────────────────
-  const { shellMat, rimMat, refractoryMat, floorMat, coilMat, spoutMat } = useMemo(() => ({
+  const { shellMat, rimMat, refractoryMat, floorMat, coilMat, spoutMat, frameMat } = useMemo(() => ({
     // Industrial heavy steel outer shell
     shellMat: new THREE.MeshStandardMaterial({
       color: '#181b22',
@@ -88,9 +88,15 @@ export default function Furnace({ debugFlow = false }: { debugFlow?: boolean }) 
     }),
     // Smooth contoured pouring spout
     spoutMat: new THREE.MeshStandardMaterial({
-      color: '#1e222b',
-      roughness: 0.45,
-      metalness: 0.88,
+      color: '#343b48',
+      roughness: 0.34,
+      metalness: 0.92,
+    }),
+    // Painted structural steel for the tilting cradle and trunnions
+    frameMat: new THREE.MeshStandardMaterial({
+      color: '#10141c',
+      roughness: 0.48,
+      metalness: 0.82,
     }),
   }), []);
 
@@ -107,40 +113,17 @@ export default function Furnace({ debugFlow = false }: { debugFlow?: boolean }) 
     return geom;
   }, []);
 
-  // ── Build Sculpted Organic Spout Geometry ───────────────────
-  const spoutMeshGroup = useMemo(() => {
-    const group = new THREE.Group();
-
-    // 1. Spout channel trough base
-    const troughGeom = new THREE.CylinderGeometry(0.32, 0.18, 0.70, 16, 1, false, 0, Math.PI);
-    troughGeom.rotateZ(-Math.PI / 2);
-    troughGeom.rotateY(Math.PI / 2);
-    const trough = new THREE.Mesh(troughGeom, spoutMat);
-    trough.position.set(0.35, -0.06, 0);
-    trough.rotation.z = -0.32;
-    group.add(trough);
-
-    // 2. Left and right guide flanges
-    const flangeGeom = new THREE.BoxGeometry(0.65, 0.18, 0.05);
-    const leftFlange = new THREE.Mesh(flangeGeom, spoutMat);
-    leftFlange.position.set(0.34, 0.05, 0.16);
-    leftFlange.rotation.z = -0.32;
-    group.add(leftFlange);
-
-    const rightFlange = new THREE.Mesh(flangeGeom, spoutMat);
-    rightFlange.position.set(0.34, 0.05, -0.16);
-    rightFlange.rotation.z = -0.32;
-    group.add(rightFlange);
-
-    // 3. Smooth rounded pouring lip tip
-    const lipGeom = new THREE.CylinderGeometry(0.04, 0.04, 0.32, 12);
-    lipGeom.rotateX(Math.PI / 2);
-    const lip = new THREE.Mesh(lipGeom, spoutMat);
-    lip.position.set(0.64, -0.22, 0);
-    group.add(lip);
-
-    return group;
-  }, [spoutMat]);
+  // A continuous curved lip reads as a furnace spout instead of a detached band.
+  // Keeping it as a single static geometry also avoids rebuilding it during scroll.
+  const spoutGeom = useMemo(() => {
+    const path = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(CAVITY_R_TOP - 0.05, HEIGHT / 2 - 0.10, 0),
+      new THREE.Vector3(CAVITY_R_TOP + 0.28, HEIGHT / 2 - 0.10, 0),
+      new THREE.Vector3(CAVITY_R_TOP + 0.54, HEIGHT / 2 - 0.28, 0),
+      new THREE.Vector3(CAVITY_R_TOP + 0.68, HEIGHT / 2 - 0.48, 0),
+    ]);
+    return new THREE.TubeGeometry(path, 20, 0.16, 12, false);
+  }, []);
 
   // ── Scroll Animation Loop ───────────────────────────────────
   useFrame(({ clock }) => {
@@ -150,7 +133,7 @@ export default function Furnace({ debugFlow = false }: { debugFlow?: boolean }) 
     // Stage 03-04 (0.15 -> 0.20): Enters to stationary position X = 0.70
     // Stage 04-07 (0.20 -> 0.485): Stays at X = 0.70
     // Post-Pour (0.485 -> 0.505): Un-tilts to vertical
-    // Exit (0.505 -> 0.535): Slides back out of scene to X = 25 BEFORE ladle/mold move
+    // Exit (0.505 -> 0.535): Retreats left, away from the receiving ladle.
     let posX = 25;
     if (p < 0.15) {
       posX = 25;
@@ -159,11 +142,12 @@ export default function Furnace({ debugFlow = false }: { debugFlow?: boolean }) 
     } else if (p < 0.485) {
       posX = 0.70;
     } else if (p <= 0.535) {
-      // Smooth retreat to the right, clearing the bay completely
+      // The ladle occupies the right side of the bay, so the furnace leaves
+      // through its own (left) service lane instead of cutting through it.
       const exitT = (p - 0.485) / (0.535 - 0.485);
-      posX = lerp(0.70, 25, easeInOut(exitT));
+      posX = lerp(0.70, -25, easeInOut(exitT));
     } else {
-      posX = 25;
+      posX = -25;
     }
 
     // 2. Furnace Tilt
@@ -185,8 +169,12 @@ export default function Furnace({ debugFlow = false }: { debugFlow?: boolean }) 
     }
 
     if (pivotRef.current) {
-      pivotRef.current.position.set(posX, 2.2, 0);
-      pivotRef.current.rotation.z = tiltAngle;
+      const isActive = p >= 0.27 && p <= 0.485;
+      // Barely perceptible furnace vibration makes the heating stage feel alive
+      // without affecting the scroll-controlled choreography.
+      const vibration = isActive ? Math.sin(clock.getElapsedTime() * 7.0) * 0.009 : 0;
+      pivotRef.current.position.set(posX, 2.2 + vibration * 0.35, 0);
+      pivotRef.current.rotation.z = tiltAngle + vibration;
     }
 
     // 3. Metal Filling Level (Linear with scroll, zero lag)
@@ -312,15 +300,42 @@ export default function Furnace({ debugFlow = false }: { debugFlow?: boolean }) 
           </mesh>
         ))}
 
-        {/* ═══ 8. ORGANIC SCULPTED POURING SPOUT ═══ */}
-        <group position={[CAVITY_R_TOP + 0.04, HEIGHT / 2 - 0.06, 0]}>
-          <primitive object={spoutMeshGroup} />
-
-          <mesh ref={spoutMarkerRef} position={[0.66, -0.22, 0]} visible={debugFlow}>
-            <sphereGeometry args={[0.05]} />
-            <meshBasicMaterial color="yellow" />
-          </mesh>
-        </group>
+        {/* ═══ 8. TILTING CRADLE, TRUNNIONS & CONTINUOUS POURING LIP ═══ */}
+        <mesh position={[0, -0.15, 1.48]} rotation={[Math.PI / 2, 0, 0]} material={frameMat}>
+          <cylinderGeometry args={[0.14, 0.14, 0.28, 16]} />
+        </mesh>
+        <mesh position={[0, -0.15, -1.48]} rotation={[Math.PI / 2, 0, 0]} material={frameMat}>
+          <cylinderGeometry args={[0.14, 0.14, 0.28, 16]} />
+        </mesh>
+        {[-1, 1].map((side) => (
+          <group key={side} position={[-0.18, -1.22, side * 1.52]}>
+            <mesh position={[0, 0.62, 0]} material={frameMat}>
+              <boxGeometry args={[0.20, 1.38, 0.18]} />
+            </mesh>
+            <mesh position={[0.10, -0.06, 0]} material={frameMat}>
+              <boxGeometry args={[0.80, 0.16, 0.34]} />
+            </mesh>
+          </group>
+        ))}
+        <mesh position={[-0.18, -1.22, 0]} material={frameMat}>
+          <boxGeometry args={[0.82, 0.14, 3.25]} />
+        </mesh>
+        <mesh geometry={spoutGeom} material={spoutMat} />
+        <mesh
+          position={[CAVITY_R_TOP + 0.68, HEIGHT / 2 - 0.48, 0]}
+          rotation={[0, Math.PI / 2, 0]}
+          material={rimMat}
+        >
+          <torusGeometry args={[0.16, 0.035, 10, 18]} />
+        </mesh>
+        <mesh
+          ref={spoutMarkerRef}
+          position={[CAVITY_R_TOP + 0.68, HEIGHT / 2 - 0.48, 0]}
+          visible={debugFlow}
+        >
+          <sphereGeometry args={[0.05]} />
+          <meshBasicMaterial color="yellow" />
+        </mesh>
 
         {/* ═══ 9. SCROLL-DRIVEN LIQUID METAL MESH ═══ */}
         <mesh

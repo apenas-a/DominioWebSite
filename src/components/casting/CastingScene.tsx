@@ -10,6 +10,7 @@ import CameraRig from './components/CameraRig';
 import MoldIgnitionParticles from './components/MoldIgnitionParticles';
 import FinishedGear from './components/FinishedGear';
 import SceneLighting from './components/SceneLighting';
+import FoundryBackdrop from './components/FoundryBackdrop';
 
 interface CastingSceneProps {
   progressRef: React.MutableRefObject<number>;
@@ -27,6 +28,7 @@ export default function CastingScene({ progressRef, debug = false }: CastingScen
     <CastingProvider>
       <CameraRig />
       <SceneLighting />
+      <FoundryBackdrop />
       
       <MoldAssembly debugFlow={debug} />
       <Furnace debugFlow={debug} />
@@ -35,14 +37,6 @@ export default function CastingScene({ progressRef, debug = false }: CastingScen
       <MoldIgnitionParticles />
       <FinishedGear />
       
-      {/* Floor */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.5, 0]}>
-        <planeGeometry args={[60, 60]} />
-        <meshStandardMaterial color="#111114" roughness={0.9} metalness={0.3} />
-      </mesh>
-      
-      {/* Grid */}
-      <gridHelper args={[60, 40, '#441808', '#1a1d24']} position={[0, -0.49, 0]} />
     </CastingProvider>
   );
 }
