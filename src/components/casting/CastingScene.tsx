@@ -11,6 +11,7 @@ import MoldIgnitionParticles from './components/MoldIgnitionParticles';
 import FinishedGear from './components/FinishedGear';
 import SceneLighting from './components/SceneLighting';
 import FoundryBackdrop from './components/FoundryBackdrop';
+import MoltenEmbers from './components/MoltenEmbers';
 
 interface CastingSceneProps {
   progressRef: React.MutableRefObject<number>;
@@ -34,6 +35,7 @@ export default function CastingScene({ progressRef, debug = false }: CastingScen
       <Furnace debugFlow={debug} />
       <PouringLadle debugFlow={debug} />
       <PourStream />
+      <MoltenEmbers />
       <MoldIgnitionParticles />
       <FinishedGear />
       
