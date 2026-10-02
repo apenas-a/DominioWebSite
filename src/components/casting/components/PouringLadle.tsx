@@ -38,7 +38,7 @@ const FLOOR_Y = -HEIGHT / 2 + 0.08; // -0.52
 const CAVITY_H = HEIGHT - 0.16;     // 1.04
 
 // Locations
-const RECEIVE_X = 0.70;             // Centered below furnace spout
+const RECEIVE_X = 1.90;             // Clear of the furnace foundation during receiving
 const RECEIVE_Y = 0.20;             // On the floor
 const MOLD_SPRUE_X = 1.00;          // Exact center of mold sprue funnel
 const MOLD_HOVER_Y = 3.18;          // Base hovers at Y ~ 2.58 directly over sprue mouth (Y = 2.37)
@@ -190,7 +190,7 @@ export default function PouringLadle({ debugFlow = false }: { debugFlow?: boolea
     const SPOUT_LOCAL_Y = 0.45;
     // Sprue mouth target coordinates
     const SPRUE_TARGET_X = MOLD_SPRUE_X; // 1.00
-    const SPRUE_TARGET_Y = 2.98;          // ~0.61 above sprue rim (2.37) for dynamic stream drop
+    const SPRUE_TARGET_Y = 3.35;          // Clearance over the mold while preserving a visible stream drop
     const UPRIGHT_HOVER_Y = 3.25;
 
     if (p < 0.39) {
