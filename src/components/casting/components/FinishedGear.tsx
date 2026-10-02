@@ -35,18 +35,18 @@ export default function FinishedGear() {
 
   const geometry = useMemo(() => createGearGeometry(DEFAULT_GEAR_PARAMS), []);
 
-  const gearShaderMat = useMemo(
-    () =>
-      new THREE.ShaderMaterial({
+  const gearShaderMat = useMemo(() => {
+    const material = new THREE.ShaderMaterial({
         uniforms: gearCastingShader.uniforms(),
         vertexShader: gearCastingShader.vertexShader,
         fragmentShader: gearCastingShader.fragmentShader,
         transparent: true,
         depthWrite: true,
         side: THREE.DoubleSide,
-      }),
-    []
-  );
+      });
+    material.uniforms.uThickness.value = DEFAULT_GEAR_PARAMS.thickness;
+    return material;
+  }, []);
 
   useFrame(({ clock }) => {
     const p = castingState.progress;
@@ -146,5 +146,4 @@ export default function FinishedGear() {
     </>
   );
 }
-
 
