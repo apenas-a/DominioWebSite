@@ -164,16 +164,25 @@ export default function Furnace({ debugFlow = false }: { debugFlow?: boolean }) 
     return geom;
   }, []);
 
-  // A continuous curved lip reads as a furnace spout instead of a detached band.
-  // Keeping it as a single static geometry also avoids rebuilding it during scroll.
+  // Forward-facing triangular casting lip. Its centreline stays almost level,
+  // so the liquid leaves the furnace as a fall instead of following a bent pipe.
   const spoutGeom = useMemo(() => {
-    const path = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(CAVITY_R_TOP - 0.05, HEIGHT / 2 - 0.10, 0),
-      new THREE.Vector3(CAVITY_R_TOP + 0.28, HEIGHT / 2 - 0.10, 0),
-      new THREE.Vector3(CAVITY_R_TOP + 0.54, HEIGHT / 2 - 0.28, 0),
-      new THREE.Vector3(CAVITY_R_TOP + 0.68, HEIGHT / 2 - 0.48, 0),
-    ]);
-    return new THREE.TubeGeometry(path, 20, 0.16, 12, false);
+    const baseX = CAVITY_R_TOP - 0.04;
+    const shape = new THREE.Shape();
+    shape.moveTo(baseX, HEIGHT / 2 - 0.08);
+    shape.lineTo(baseX, HEIGHT / 2 - 0.42);
+    shape.lineTo(CAVITY_R_TOP + 0.92, HEIGHT / 2 - 0.26);
+    shape.closePath();
+
+    const geometry = new THREE.ExtrudeGeometry(shape, {
+      depth: 0.44,
+      bevelEnabled: true,
+      bevelThickness: 0.025,
+      bevelSize: 0.025,
+      bevelSegments: 2,
+    });
+    geometry.translate(0, 0, -0.22);
+    return geometry;
   }, []);
 
   // ── Scroll Animation Loop ───────────────────────────────────
@@ -402,16 +411,12 @@ export default function Furnace({ debugFlow = false }: { debugFlow?: boolean }) 
           </group>
         ))}
         <mesh geometry={spoutGeom} material={spoutMat} />
-        <mesh
-          position={[CAVITY_R_TOP + 0.68, HEIGHT / 2 - 0.48, 0]}
-          rotation={[0, Math.PI / 2, 0]}
-          material={rimMat}
-        >
-          <torusGeometry args={[0.16, 0.035, 10, 18]} />
+        <mesh position={[CAVITY_R_TOP + 0.92, HEIGHT / 2 - 0.26, 0]} material={rimMat}>
+          <boxGeometry args={[0.09, 0.15, 0.48]} />
         </mesh>
         <mesh
           ref={spoutMarkerRef}
-          position={[CAVITY_R_TOP + 0.68, HEIGHT / 2 - 0.48, 0]}
+          position={[CAVITY_R_TOP + 0.92, HEIGHT / 2 - 0.26, 0]}
           visible={debugFlow}
         >
           <sphereGeometry args={[0.05]} />
@@ -443,10 +448,10 @@ export default function Furnace({ debugFlow = false }: { debugFlow?: boolean }) 
       <group position={[-SHELL_R_TOP - 0.20, -HEIGHT / 2 + 0.15, 0]}>
         {/* Double steel plinth bolted into the foundry floor */}
         <mesh position={[0, -1.70, 0]} material={frameMat}>
-          <boxGeometry args={[3.85, 0.24, 3.75]} />
+          <boxGeometry args={[3.10, 0.24, 3.75]} />
         </mesh>
         <mesh position={[0, -1.54, 0]} material={pistonMat}>
-          <boxGeometry args={[3.45, 0.16, 3.20]} />
+          <boxGeometry args={[2.90, 0.16, 3.20]} />
         </mesh>
 
         {/* Two rigid A-frame pedestals retain the furnace at its trunnions */}

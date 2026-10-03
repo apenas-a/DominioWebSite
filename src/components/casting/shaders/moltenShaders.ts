@@ -82,9 +82,10 @@ export const pourStreamShader = {
       vNormal = normalize(normalMatrix * normal);
       vec3 pos = position;
       
-      // wave displacement along Y
-      pos.x += sin(pos.y * 12.0 - uTime * 14.0) * 0.03 * (1.0 - uv.y);
-      pos.z += cos(pos.y * 10.0 + uTime * 12.0) * 0.025 * (1.0 - uv.y);
+      // Subtle surface vibration — enough to read as liquid without making
+      // the entire stream snake sideways.
+      pos.x += sin(pos.y * 10.0 - uTime * 10.0) * 0.006 * (1.0 - uv.y);
+      pos.z += cos(pos.y * 9.0 + uTime * 9.0) * 0.004 * (1.0 - uv.y);
       
       vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
       vViewDir = -mvPosition.xyz;

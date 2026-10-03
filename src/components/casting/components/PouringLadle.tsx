@@ -38,7 +38,7 @@ const FLOOR_Y = -HEIGHT / 2 + 0.08; // -0.52
 const CAVITY_H = HEIGHT - 0.16;     // 1.04
 
 // Locations
-const RECEIVE_X = 1.90;             // Clear of the furnace foundation during receiving
+const RECEIVE_X = 1.50;             // Clear of the foundation while remaining below the furnace lip
 const RECEIVE_Y = 0.20;             // On the floor
 const MOLD_SPRUE_X = 1.00;          // Exact center of mold sprue funnel
 const MOLD_HOVER_Y = 3.18;          // Base hovers at Y ~ 2.58 directly over sprue mouth (Y = 2.37)
@@ -163,16 +163,24 @@ export default function PouringLadle({ debugFlow = false }: { debugFlow?: boolea
   // ── Pre-allocate Dynamic Conical Liquid Geometry ────────────
   const dynamicLiquidGeom = useMemo(() => createInitialLadleLiquidGeometry(), []);
 
-  // A curved lip gives the pan a clear direction of pour, instead of the
-  // previous diagonal cylinder that could read as a loose metal strip.
+  // Forward-facing triangular lip: a proper pouring chute without the
+  // misleading downward-hook silhouette of the previous tube.
   const spoutGeom = useMemo(() => {
-    const path = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(R_TOP_OUTER - 0.16, HEIGHT / 2 - 0.04, 0),
-      new THREE.Vector3(R_TOP_OUTER + 0.04, HEIGHT / 2 - 0.05, 0),
-      new THREE.Vector3(0.90, 0.53, 0),
-      new THREE.Vector3(0.98, 0.45, 0),
-    ]);
-    return new THREE.TubeGeometry(path, 14, 0.10, 10, false);
+    const shape = new THREE.Shape();
+    shape.moveTo(R_TOP_OUTER - 0.12, HEIGHT / 2 - 0.02);
+    shape.lineTo(R_TOP_OUTER - 0.12, HEIGHT / 2 - 0.29);
+    shape.lineTo(1.20, HEIGHT / 2 - 0.10);
+    shape.closePath();
+
+    const geometry = new THREE.ExtrudeGeometry(shape, {
+      depth: 0.34,
+      bevelEnabled: true,
+      bevelThickness: 0.018,
+      bevelSize: 0.018,
+      bevelSegments: 2,
+    });
+    geometry.translate(0, 0, -0.17);
+    return geometry;
   }, []);
 
   // ── Scroll Animation Loop ───────────────────────────────────
@@ -196,8 +204,8 @@ export default function PouringLadle({ debugFlow = false }: { debugFlow?: boolea
     let isVisible = false;
 
     // Local coordinates of the spout tip relative to ladle center
-    const SPOUT_LOCAL_X = 0.98;
-    const SPOUT_LOCAL_Y = 0.45;
+    const SPOUT_LOCAL_X = 1.20;
+    const SPOUT_LOCAL_Y = 0.50;
     // Sprue mouth target coordinates
     const SPRUE_TARGET_X = MOLD_SPRUE_X; // 1.00
     const SPRUE_TARGET_Y = 3.35;          // Clearance over the mold while preserving a visible stream drop
@@ -384,10 +392,10 @@ export default function PouringLadle({ debugFlow = false }: { debugFlow?: boolea
 
         {/* ═══ 5. POURING LIP SPOUT ═══ */}
         <mesh geometry={spoutGeom} material={rimMat} />
-        <mesh position={[0.98, 0.45, 0]} rotation={[0, Math.PI / 2, 0]} material={rimMat}>
-          <torusGeometry args={[0.10, 0.026, 8, 14]} />
+        <mesh position={[1.20, 0.50, 0]} material={rimMat}>
+          <boxGeometry args={[0.08, 0.14, 0.38]} />
         </mesh>
-        <mesh ref={spoutMarkerRef} position={[0.98, 0.45, 0]} visible={debugFlow}>
+        <mesh ref={spoutMarkerRef} position={[1.20, 0.50, 0]} visible={debugFlow}>
           <sphereGeometry args={[0.04]} />
           <meshBasicMaterial color="red" />
         </mesh>

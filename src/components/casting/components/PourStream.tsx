@@ -54,14 +54,22 @@ function sampleFlowPoint(
   target: THREE.Vector3,
   t: number,
   time: number,
-  destination: THREE.Vector3
+  destination: THREE.Vector3,
+  sagFactor = 1
 ) {
-  const arc = Math.min(0.34, source.distanceTo(target) * 0.13);
-  const wave = Math.sin(time * 11.0 - t * 17.0) * Math.sin(Math.PI * t) * 0.018;
+  const horizontalDistance = Math.hypot(target.x - source.x, target.z - source.z);
+  // A short parabolic sag creates a continuous liquid fall. The previous
+  // lateral wave made the thin stream read as a stretched wire.
+  const arc = Math.min(0.22, Math.max(0.07, horizontalDistance * 0.12)) * sagFactor;
+  const surfacePulse = Math.sin(time * 8.0 - t * 12.0) * Math.sin(Math.PI * t) * 0.004;
+  // Keep the first section vertical, like a falling liquid column. The smooth
+  // lateral correction happens close to the receiving vessel instead of
+  // stretching a diagonal filament from one lip to the other.
+  const horizontalT = t * t * (3.0 - 2.0 * t);
   destination.set(
-    THREE.MathUtils.lerp(source.x, target.x, t),
-    THREE.MathUtils.lerp(source.y, target.y, t) - Math.sin(Math.PI * t) * arc,
-    THREE.MathUtils.lerp(source.z, target.z, t) + wave
+    THREE.MathUtils.lerp(source.x, target.x, horizontalT),
+    THREE.MathUtils.lerp(source.y, target.y, t) - 4.0 * t * (1.0 - t) * arc + surfacePulse,
+    THREE.MathUtils.lerp(source.z, target.z, horizontalT)
   );
 }
 
@@ -77,18 +85,20 @@ function updateCurvedStream(
   tangent: THREE.Vector3,
   normalA: THREE.Vector3,
   normalB: THREE.Vector3,
+  sagFactor: number,
 ) {
   const pos = stream.positions;
 
   for (let ring = 0; ring <= STREAM_SEGMENTS; ring++) {
     const t = ring / STREAM_SEGMENTS;
-    sampleFlowPoint(source, target, t, time, point);
+    sampleFlowPoint(source, target, t, time, point, sagFactor);
     sampleFlowPoint(
       source,
       target,
       ring === STREAM_SEGMENTS ? t - 0.015 : t + 0.015,
       time,
-      nextPoint
+      nextPoint,
+      sagFactor
     );
     if (ring === STREAM_SEGMENTS) {
       tangent.subVectors(point, nextPoint).normalize();
@@ -102,7 +112,7 @@ function updateCurvedStream(
     normalB.crossVectors(tangent, normalA).normalize();
 
     const baseRadius = THREE.MathUtils.lerp(topRadius, bottomRadius, t);
-    const radius = baseRadius * (1 + Math.sin(time * 16.0 - t * 22.0) * 0.07);
+    const radius = baseRadius * (1 + Math.sin(time * 10.0 - t * 14.0) * 0.025);
 
     for (let side = 0; side <= STREAM_RADIAL_SEGMENTS; side++) {
       const angle = (side / STREAM_RADIAL_SEGMENTS) * Math.PI * 2;
@@ -262,25 +272,26 @@ export default function PourStream() {
         const dist = src.distanceTo(tgt);
         if (dist > 0.05) {
           let scaleFactor = 1.0;
-          if (p < 0.43) {
-            scaleFactor = (p - 0.42) / 0.01;
-          } else if (p > 0.475) {
-            scaleFactor = (0.485 - p) / 0.01;
+          if (p < 0.427) {
+            scaleFactor = (p - 0.42) / 0.007;
+          } else if (p > 0.482) {
+            scaleFactor = (0.485 - p) / 0.003;
           }
-          scaleFactor = THREE.MathUtils.clamp(scaleFactor, 0.1, 1.0);
+          scaleFactor = THREE.MathUtils.clamp(scaleFactor, 0.18, 1.0);
 
           updateCurvedStream(
             stream1,
             src,
             tgt,
-            0.070 * scaleFactor,
-            0.043 * scaleFactor,
+            0.105 * scaleFactor,
+            0.068 * scaleFactor,
             time,
             flowPoint,
             nextFlowPoint,
             flowTangent,
             flowNormalA,
             flowNormalB,
+            0.72,
           );
 
           streamMaterial1.uniforms.uTime.value = time;
@@ -329,6 +340,7 @@ export default function PourStream() {
           flowTangent,
           flowNormalA,
           flowNormalB,
+          0.90,
         );
 
         streamMaterial2.uniforms.uTime.value = time;
@@ -352,7 +364,7 @@ export default function PourStream() {
 
           // Particle path follows the same gravity arc as the main stream.
           const t = item.progress;
-          sampleFlowPoint(src, tgt, t, time, flowPoint);
+          sampleFlowPoint(src, tgt, t, time, flowPoint, 0.90);
 
           // Stream cross section radius narrows as it accelerates
           const currentR = item.offsetR * (1.0 - t * 0.55);
