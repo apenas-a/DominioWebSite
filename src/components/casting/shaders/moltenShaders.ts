@@ -39,15 +39,15 @@ export const moltenSurfaceShader = {
       vec2 noiseUv = vWorldPos.xz * 5.0 + uTime * 0.5;
       float n = hash(floor(noiseUv));
       
-      vec3 darkMetal = vec3(0.2, 0.05, 0.02);
-      vec3 deepRed = vec3(0.85, 0.18, 0.02);
-      vec3 brightOrange = vec3(1.0, 0.65, 0.15);
-      vec3 whiteHot = vec3(1.0, 0.95, 0.8);
+      vec3 darkMetal = vec3(0.16, 0.018, 0.002);
+      vec3 deepRed = vec3(0.72, 0.075, 0.006);
+      vec3 brightOrange = vec3(1.0, 0.32, 0.018);
+      vec3 whiteHot = vec3(1.0, 0.70, 0.18);
       
       // Color ramp based on intensity
-      vec3 baseCol = mix(darkMetal, deepRed, clamp(uIntensity * 1.5, 0.0, 1.0));
-      vec3 hotCol = mix(baseCol, brightOrange, clamp((uIntensity - 0.3) * 1.8, 0.0, 1.0));
-      hotCol = mix(hotCol, whiteHot, clamp((uIntensity - 0.75) * 4.0, 0.0, 1.0));
+      vec3 baseCol = mix(darkMetal, deepRed, clamp(uIntensity * 1.35, 0.0, 1.0));
+      vec3 hotCol = mix(baseCol, brightOrange, clamp((uIntensity - 0.22) * 1.35, 0.0, 1.0));
+      hotCol = mix(hotCol, whiteHot, clamp((uIntensity - 0.88) * 4.0, 0.0, 1.0));
       
       vec3 color = mix(hotCol, brightOrange, n * 0.25 * uIntensity);
       
@@ -56,10 +56,10 @@ export const moltenSurfaceShader = {
       float fresnel = 1.0 - max(dot(viewDir, vNormal), 0.0);
       fresnel = pow(fresnel, 2.5);
       
-      color += vec3(1.0, 0.85, 0.3) * fresnel * uIntensity;
+      color += vec3(1.0, 0.52, 0.08) * fresnel * uIntensity * 0.72;
       
       // Scale emissive with intensity so 0.0 has zero glow
-      vec3 emissive = color * (uIntensity * 4.5);
+      vec3 emissive = color * (0.20 + uIntensity * 2.8);
       
       gl_FragColor = vec4(emissive, 1.0);
     }
@@ -82,9 +82,10 @@ export const pourStreamShader = {
       vNormal = normalize(normalMatrix * normal);
       vec3 pos = position;
       
-      // wave displacement along Y
-      pos.x += sin(pos.y * 12.0 - uTime * 14.0) * 0.03 * (1.0 - uv.y);
-      pos.z += cos(pos.y * 10.0 + uTime * 12.0) * 0.025 * (1.0 - uv.y);
+      // Subtle surface vibration — enough to read as liquid without making
+      // the entire stream snake sideways.
+      pos.x += sin(pos.y * 10.0 - uTime * 10.0) * 0.006 * (1.0 - uv.y);
+      pos.z += cos(pos.y * 9.0 + uTime * 9.0) * 0.004 * (1.0 - uv.y);
       
       vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
       vViewDir = -mvPosition.xyz;
@@ -105,7 +106,7 @@ export const pourStreamShader = {
       // Streaks
       float streaks = sin(vUv.y * 24.0 - uTime * 18.0 + vUv.x * 8.0) * 0.5 + 0.5;
       
-      vec3 coreColor = vec3(1.0, 1.0, 0.9);
+      vec3 coreColor = vec3(1.0, 0.72, 0.24);
       vec3 edgeColor = vec3(1.0, 0.3, 0.0);
       
       vec3 color = mix(edgeColor, coreColor, core + streaks * 0.2);
@@ -116,7 +117,7 @@ export const pourStreamShader = {
       
       color += edgeColor * fresnel * 2.0;
       
-      vec3 emissive = color * 3.5;
+      vec3 emissive = color * 3.0;
       
       gl_FragColor = vec4(emissive, uOpacity);
     }
@@ -297,4 +298,3 @@ export const gearCastingShader = {
     }
   `,
 };
-

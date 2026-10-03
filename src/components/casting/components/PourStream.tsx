@@ -19,6 +19,114 @@ import { pourStreamShader } from '@/components/casting/shaders/moltenShaders';
 
 const NUM_STREAM_PARTICLES = 75;
 const NUM_SPLASH_PARTICLES = 45;
+const STREAM_SEGMENTS = 16;
+const STREAM_RADIAL_SEGMENTS = 10;
+const STREAM_UP = new THREE.Vector3(0, 1, 0);
+const STREAM_FALLBACK = new THREE.Vector3(1, 0, 0);
+
+interface CurvedStreamGeometry {
+  geometry: THREE.BufferGeometry;
+  positions: Float32Array;
+}
+
+function createCurvedStreamGeometry(): CurvedStreamGeometry {
+  const geometry = new THREE.BufferGeometry();
+  const positions = new Float32Array(
+    (STREAM_SEGMENTS + 1) * (STREAM_RADIAL_SEGMENTS + 1) * 3
+  );
+  const indices: number[] = [];
+
+  for (let ring = 0; ring < STREAM_SEGMENTS; ring++) {
+    for (let side = 0; side < STREAM_RADIAL_SEGMENTS; side++) {
+      const a = ring * (STREAM_RADIAL_SEGMENTS + 1) + side;
+      const b = a + STREAM_RADIAL_SEGMENTS + 1;
+      indices.push(a, b, a + 1, b, b + 1, a + 1);
+    }
+  }
+
+  geometry.setIndex(indices);
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  return { geometry, positions };
+}
+
+function sampleFlowPoint(
+  source: THREE.Vector3,
+  target: THREE.Vector3,
+  t: number,
+  time: number,
+  destination: THREE.Vector3,
+  sagFactor = 1
+) {
+  const horizontalDistance = Math.hypot(target.x - source.x, target.z - source.z);
+  // A short parabolic sag creates a continuous liquid fall. The previous
+  // lateral wave made the thin stream read as a stretched wire.
+  const arc = Math.min(0.22, Math.max(0.07, horizontalDistance * 0.12)) * sagFactor;
+  const surfacePulse = Math.sin(time * 8.0 - t * 12.0) * Math.sin(Math.PI * t) * 0.004;
+  // Keep the first section vertical, like a falling liquid column. The smooth
+  // lateral correction happens close to the receiving vessel instead of
+  // stretching a diagonal filament from one lip to the other.
+  const horizontalT = t * t * (3.0 - 2.0 * t);
+  destination.set(
+    THREE.MathUtils.lerp(source.x, target.x, horizontalT),
+    THREE.MathUtils.lerp(source.y, target.y, t) - 4.0 * t * (1.0 - t) * arc + surfacePulse,
+    THREE.MathUtils.lerp(source.z, target.z, horizontalT)
+  );
+}
+
+function updateCurvedStream(
+  stream: CurvedStreamGeometry,
+  source: THREE.Vector3,
+  target: THREE.Vector3,
+  topRadius: number,
+  bottomRadius: number,
+  time: number,
+  point: THREE.Vector3,
+  nextPoint: THREE.Vector3,
+  tangent: THREE.Vector3,
+  normalA: THREE.Vector3,
+  normalB: THREE.Vector3,
+  sagFactor: number,
+) {
+  const pos = stream.positions;
+
+  for (let ring = 0; ring <= STREAM_SEGMENTS; ring++) {
+    const t = ring / STREAM_SEGMENTS;
+    sampleFlowPoint(source, target, t, time, point, sagFactor);
+    sampleFlowPoint(
+      source,
+      target,
+      ring === STREAM_SEGMENTS ? t - 0.015 : t + 0.015,
+      time,
+      nextPoint,
+      sagFactor
+    );
+    if (ring === STREAM_SEGMENTS) {
+      tangent.subVectors(point, nextPoint).normalize();
+    } else {
+      tangent.subVectors(nextPoint, point).normalize();
+    }
+
+    normalA.crossVectors(tangent, STREAM_UP);
+    if (normalA.lengthSq() < 0.001) normalA.crossVectors(tangent, STREAM_FALLBACK);
+    normalA.normalize();
+    normalB.crossVectors(tangent, normalA).normalize();
+
+    const baseRadius = THREE.MathUtils.lerp(topRadius, bottomRadius, t);
+    const radius = baseRadius * (1 + Math.sin(time * 10.0 - t * 14.0) * 0.025);
+
+    for (let side = 0; side <= STREAM_RADIAL_SEGMENTS; side++) {
+      const angle = (side / STREAM_RADIAL_SEGMENTS) * Math.PI * 2;
+      const index = (ring * (STREAM_RADIAL_SEGMENTS + 1) + side) * 3;
+      pos[index] = point.x + (normalA.x * Math.cos(angle) + normalB.x * Math.sin(angle)) * radius;
+      pos[index + 1] = point.y + (normalA.y * Math.cos(angle) + normalB.y * Math.sin(angle)) * radius;
+      pos[index + 2] = point.z + (normalA.z * Math.cos(angle) + normalB.z * Math.sin(angle)) * radius;
+    }
+  }
+
+  const position = stream.geometry.attributes.position as THREE.BufferAttribute;
+  position.needsUpdate = true;
+  stream.geometry.computeVertexNormals();
+}
 
 export default function PourStream() {
   const stream1Ref = useRef<THREE.Mesh>(null);
@@ -56,16 +164,10 @@ export default function PourStream() {
     []
   );
 
-  // Controlled stream from furnace (Stage 07)
-  const stream1Geom = useMemo(() => {
-    return new THREE.CylinderGeometry(0.026, 0.040, 1.0, 16, 16);
-  }, []);
-
-  // Tapered fluid geometry: wider at ladle spout (0.046), narrows at bottom sprue entry (0.025)
-  const stream2Geom = useMemo(() => {
-    const geom = new THREE.CylinderGeometry(0.046, 0.025, 1.0, 20, 24);
-    return geom;
-  }, []);
+  // Dynamic tube meshes follow a gravity arc. They are updated in place so the
+  // flowing metal does not allocate geometry every rendered frame.
+  const stream1 = useMemo(() => createCurvedStreamGeometry(), []);
+  const stream2 = useMemo(() => createCurvedStreamGeometry(), []);
 
   // ── Particle Systems Geometries & State ─────────────────────
   // 1. Flowing Stream Particles
@@ -149,9 +251,11 @@ export default function PourStream() {
     });
   }, []);
 
-  const vDir = useMemo(() => new THREE.Vector3(), []);
-  const vMid = useMemo(() => new THREE.Vector3(), []);
-  const upVec = useMemo(() => new THREE.Vector3(0, 1, 0), []);
+  const flowPoint = useMemo(() => new THREE.Vector3(), []);
+  const nextFlowPoint = useMemo(() => new THREE.Vector3(), []);
+  const flowTangent = useMemo(() => new THREE.Vector3(), []);
+  const flowNormalA = useMemo(() => new THREE.Vector3(), []);
+  const flowNormalB = useMemo(() => new THREE.Vector3(), []);
 
   useFrame(({ clock }, delta) => {
     const p = castingState.progress;
@@ -167,21 +271,28 @@ export default function PourStream() {
 
         const dist = src.distanceTo(tgt);
         if (dist > 0.05) {
-          vMid.addVectors(src, tgt).multiplyScalar(0.5);
-          stream1Ref.current.position.copy(vMid);
-
-          vDir.subVectors(src, tgt).normalize();
-          stream1Ref.current.quaternion.setFromUnitVectors(upVec, vDir);
-
           let scaleFactor = 1.0;
-          if (p < 0.43) {
-            scaleFactor = (p - 0.42) / 0.01;
-          } else if (p > 0.475) {
-            scaleFactor = (0.485 - p) / 0.01;
+          if (p < 0.427) {
+            scaleFactor = (p - 0.42) / 0.007;
+          } else if (p > 0.482) {
+            scaleFactor = (0.485 - p) / 0.003;
           }
-          scaleFactor = THREE.MathUtils.clamp(scaleFactor, 0.1, 1.0);
+          scaleFactor = THREE.MathUtils.clamp(scaleFactor, 0.18, 1.0);
 
-          stream1Ref.current.scale.set(scaleFactor, dist, scaleFactor);
+          updateCurvedStream(
+            stream1,
+            src,
+            tgt,
+            0.105 * scaleFactor,
+            0.068 * scaleFactor,
+            time,
+            flowPoint,
+            nextFlowPoint,
+            flowTangent,
+            flowNormalA,
+            flowNormalB,
+            0.72,
+          );
 
           streamMaterial1.uniforms.uTime.value = time;
           streamMaterial1.uniforms.uOpacity.value = scaleFactor;
@@ -217,13 +328,20 @@ export default function PourStream() {
       // ── A. Dynamic Fluid Stream Mesh ──
       if (stream2Ref.current && dist > 0.04) {
         stream2Ref.current.visible = true;
-        vMid.addVectors(src, tgt).multiplyScalar(0.5);
-        stream2Ref.current.position.copy(vMid);
-
-        vDir.subVectors(src, tgt).normalize();
-        stream2Ref.current.quaternion.setFromUnitVectors(upVec, vDir);
-
-        stream2Ref.current.scale.set(scaleFactor, dist, scaleFactor);
+        updateCurvedStream(
+          stream2,
+          src,
+          tgt,
+          0.065 * scaleFactor,
+          0.035 * scaleFactor,
+          time,
+          flowPoint,
+          nextFlowPoint,
+          flowTangent,
+          flowNormalA,
+          flowNormalB,
+          0.90,
+        );
 
         streamMaterial2.uniforms.uTime.value = time;
         streamMaterial2.uniforms.uOpacity.value = scaleFactor;
@@ -244,20 +362,18 @@ export default function PourStream() {
             item.offsetAngle = Math.random() * Math.PI * 2;
           }
 
-          // Interpolated point along streamline
+          // Particle path follows the same gravity arc as the main stream.
           const t = item.progress;
-          const px = THREE.MathUtils.lerp(src.x, tgt.x, t);
-          const py = THREE.MathUtils.lerp(src.y, tgt.y, t);
-          const pz = THREE.MathUtils.lerp(src.z, tgt.z, t);
+          sampleFlowPoint(src, tgt, t, time, flowPoint, 0.90);
 
           // Stream cross section radius narrows as it accelerates
           const currentR = item.offsetR * (1.0 - t * 0.55);
           const jitterX = Math.cos(item.offsetAngle) * currentR;
           const jitterZ = Math.sin(item.offsetAngle) * currentR;
 
-          posArr[i * 3] = px + jitterX;
-          posArr[i * 3 + 1] = py;
-          posArr[i * 3 + 2] = pz + jitterZ;
+          posArr[i * 3] = flowPoint.x + jitterX;
+          posArr[i * 3 + 1] = flowPoint.y;
+          posArr[i * 3 + 2] = flowPoint.z + jitterZ;
         }
         posAttr.needsUpdate = true;
         particleMat.opacity = scaleFactor * 0.95;
@@ -319,7 +435,7 @@ export default function PourStream() {
       {/* Furnace -> Ladle Stream */}
       <mesh
         ref={stream1Ref}
-        geometry={stream1Geom}
+        geometry={stream1.geometry}
         material={streamMaterial1}
         visible={false}
       />
@@ -334,7 +450,7 @@ export default function PourStream() {
       {/* Ladle -> Mold Sprue Stream (Ref. 15) */}
       <mesh
         ref={stream2Ref}
-        geometry={stream2Geom}
+        geometry={stream2.geometry}
         material={streamMaterial2}
         visible={false}
       />
@@ -366,4 +482,3 @@ export default function PourStream() {
     </>
   );
 }
-

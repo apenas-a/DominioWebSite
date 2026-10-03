@@ -3,17 +3,25 @@ import * as THREE from 'three';
 export interface GearParams {
   teethCount: number;
   innerRadius: number;  // center hole
-  hubRadius: number;    // body radius at root of teeth
+  hubRadius: number;    // outer ring radius at root of teeth
   outerRadius: number;  // tip of teeth
   thickness: number;    // depth along Y axis
+  windowCount: number;  // open spokes between hub and outer ring
+  windowInnerRadius: number;
+  windowOuterRadius: number;
+  windowAngle: number;
 }
 
 export const DEFAULT_GEAR_PARAMS: GearParams = {
-  teethCount: 16,
-  innerRadius: 0.22,
-  hubRadius: 0.62,
-  outerRadius: 1.05,
-  thickness: 0.28,
+  teethCount: 28,
+  innerRadius: 0.20,
+  hubRadius: 0.82,
+  outerRadius: 1.08,
+  thickness: 0.34,
+  windowCount: 3,
+  windowInnerRadius: 0.39,
+  windowOuterRadius: 0.70,
+  windowAngle: 0.82,
 };
 
 export function createGearShape2D(params?: Partial<GearParams>): THREE.Shape {
@@ -22,10 +30,9 @@ export function createGearShape2D(params?: Partial<GearParams>): THREE.Shape {
   
   const toothAngle = (Math.PI * 2) / p.teethCount;
   
-  // tooth base width ~35% of tooth angle
-  const halfBaseAngle = (toothAngle * 0.35) / 2;
-  // tooth tip width ~20% of tooth angle
-  const halfTipAngle = (toothAngle * 0.20) / 2;
+  // Broad roots and short tips give the teeth a cast, industrial profile.
+  const halfBaseAngle = (toothAngle * 0.52) / 2;
+  const halfTipAngle = (toothAngle * 0.34) / 2;
   
   const rootSegments = 3; 
 
@@ -80,6 +87,33 @@ export function createGearShape2D(params?: Partial<GearParams>): THREE.Shape {
   const holePath = new THREE.Path();
   holePath.absarc(0, 0, p.innerRadius, 0, Math.PI * 2, false);
   shape.holes.push(holePath);
+
+  // Three curved windows leave a substantial central hub and outer tooth ring,
+  // matching the open-spoke casting instead of a flat solid gear blank.
+  for (let windowIndex = 0; windowIndex < p.windowCount; windowIndex++) {
+    const centerAngle = (windowIndex / p.windowCount) * Math.PI * 2 + Math.PI / 6;
+    const startAngle = centerAngle - p.windowAngle / 2;
+    const endAngle = centerAngle + p.windowAngle / 2;
+    const windowPath = new THREE.Path();
+    const arcSegments = 10;
+
+    for (let segment = 0; segment <= arcSegments; segment++) {
+      const angle = startAngle + ((endAngle - startAngle) * segment) / arcSegments;
+      const x = Math.cos(angle) * p.windowOuterRadius;
+      const y = Math.sin(angle) * p.windowOuterRadius;
+      if (segment === 0) windowPath.moveTo(x, y);
+      else windowPath.lineTo(x, y);
+    }
+    for (let segment = arcSegments; segment >= 0; segment--) {
+      const angle = startAngle + ((endAngle - startAngle) * segment) / arcSegments;
+      windowPath.lineTo(
+        Math.cos(angle) * p.windowInnerRadius,
+        Math.sin(angle) * p.windowInnerRadius
+      );
+    }
+    windowPath.closePath();
+    shape.holes.push(windowPath);
+  }
   
   return shape;
 }
@@ -90,8 +124,11 @@ export function createGearGeometry(params?: Partial<GearParams>): THREE.BufferGe
   
   const extrudeSettings = {
     depth: p.thickness,
-    bevelEnabled: false,
-    curveSegments: 12,
+    bevelEnabled: true,
+    bevelThickness: 0.018,
+    bevelSize: 0.012,
+    bevelSegments: 2,
+    curveSegments: 16,
   };
   
   const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);

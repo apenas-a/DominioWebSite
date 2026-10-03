@@ -9,7 +9,7 @@ import {
   lerp,
 } from '@/components/casting/CastingTimeline';
 import { usePourPoints } from '@/components/casting/CastingContext';
-import { createGearShape2D } from '@/components/casting/geometry/createGearShape';
+import { createGearShape2D, DEFAULT_GEAR_PARAMS } from '@/components/casting/geometry/createGearShape';
 
 /* ─────────────────────────────────────────────────────────────────
    Helper: builds an extruded gear impression (negative cavity)
@@ -17,16 +17,13 @@ import { createGearShape2D } from '@/components/casting/geometry/createGearShape
    simulates the carved void in the sand.
 ───────────────────────────────────────────────────────────────── */
 function buildGearCavityGeom(): THREE.BufferGeometry {
-  const shape = createGearShape2D({
-    teethCount: 16,
-    innerRadius: 0.22,
-    hubRadius: 0.62,
-    outerRadius: 1.05,
-    thickness: 0.28,
-  });
+  const shape = createGearShape2D(DEFAULT_GEAR_PARAMS);
   const geom = new THREE.ExtrudeGeometry(shape, {
-    depth: 0.28,
-    bevelEnabled: false,
+    depth: DEFAULT_GEAR_PARAMS.thickness,
+    bevelEnabled: true,
+    bevelThickness: 0.018,
+    bevelSize: 0.012,
+    bevelSegments: 2,
     curveSegments: 16,
   });
   geom.rotateX(Math.PI / 2);

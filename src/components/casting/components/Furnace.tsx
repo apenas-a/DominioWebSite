@@ -31,13 +31,54 @@ const CAVITY_R_BOT = 1.02;
 const HEIGHT = 2.70;
 const FLOOR_Y = -HEIGHT / 2 + 0.15; // -1.20
 const MAX_FILL_H = HEIGHT - 0.40;   // 2.30 (stops right below mouth rim)
+const PISTON_AXIS = new THREE.Vector3(0, 1, 0);
+const TILT_AXIS = new THREE.Vector3(0, 0, 1);
+
+function alignCylinder(
+  group: THREE.Group | null,
+  start: THREE.Vector3,
+  end: THREE.Vector3,
+  direction: THREE.Vector3,
+  midpoint: THREE.Vector3
+) {
+  if (!group) return;
+
+  direction.subVectors(end, start);
+  const length = direction.length();
+  if (length < 0.001) return;
+
+  midpoint.addVectors(start, end).multiplyScalar(0.5);
+  group.position.copy(midpoint);
+  group.quaternion.setFromUnitVectors(PISTON_AXIS, direction.normalize());
+  group.scale.set(1, length, 1);
+}
 
 export default function Furnace({ debugFlow = false }: { debugFlow?: boolean }) {
+  const machineRef = useRef<THREE.Group>(null);
   const pivotRef = useRef<THREE.Group>(null);
   const metalMeshRef = useRef<THREE.Mesh>(null);
   const spoutMarkerRef = useRef<THREE.Mesh>(null);
   const furnacePointLightRef = useRef<THREE.PointLight>(null);
+  const pistonBarrelRefs = useRef<Array<THREE.Group | null>>([]);
+  const pistonRodRefs = useRef<Array<THREE.Group | null>>([]);
   const pourPoints = usePourPoints();
+
+  const pistonKinematics = useMemo(() => ({
+    anchors: [
+      new THREE.Vector3(-2.12, -2.40, 1.56),
+      new THREE.Vector3(-2.12, -2.40, -1.56),
+    ],
+    // Attachment ears are welded to the tilting shell, so they inherit the
+    // furnace rotation while the anchors remain on the floor-mounted base.
+    attachmentLocal: [
+      new THREE.Vector3(-0.58, -1.48, 1.40),
+      new THREE.Vector3(-0.58, -1.48, -1.40),
+    ],
+    attachment: new THREE.Vector3(),
+    barrelEnd: new THREE.Vector3(),
+    direction: new THREE.Vector3(),
+    midpoint: new THREE.Vector3(),
+  }), []);
 
   // ── Molten Metal Shader ─────────────────────────────────────
   const metalShaderMat = useRef(
@@ -52,7 +93,7 @@ export default function Furnace({ debugFlow = false }: { debugFlow?: boolean }) 
   );
 
   // ── Materials ────────────────────────────────────────────────
-  const { shellMat, rimMat, refractoryMat, floorMat, coilMat, spoutMat } = useMemo(() => ({
+  const { shellMat, rimMat, refractoryMat, floorMat, coilMat, spoutMat, frameMat, pistonMat, rodMat } = useMemo(() => ({
     // Industrial heavy steel outer shell
     shellMat: new THREE.MeshStandardMaterial({
       color: '#181b22',
@@ -88,9 +129,25 @@ export default function Furnace({ debugFlow = false }: { debugFlow?: boolean }) 
     }),
     // Smooth contoured pouring spout
     spoutMat: new THREE.MeshStandardMaterial({
-      color: '#1e222b',
-      roughness: 0.45,
-      metalness: 0.88,
+      color: '#343b48',
+      roughness: 0.34,
+      metalness: 0.92,
+    }),
+    // Painted structural steel for the tilting cradle and trunnions
+    frameMat: new THREE.MeshStandardMaterial({
+      color: '#10141c',
+      roughness: 0.48,
+      metalness: 0.82,
+    }),
+    pistonMat: new THREE.MeshStandardMaterial({
+      color: '#27313c',
+      roughness: 0.36,
+      metalness: 0.92,
+    }),
+    rodMat: new THREE.MeshStandardMaterial({
+      color: '#a8b2bc',
+      roughness: 0.18,
+      metalness: 1.0,
     }),
   }), []);
 
@@ -107,40 +164,26 @@ export default function Furnace({ debugFlow = false }: { debugFlow?: boolean }) 
     return geom;
   }, []);
 
-  // ── Build Sculpted Organic Spout Geometry ───────────────────
-  const spoutMeshGroup = useMemo(() => {
-    const group = new THREE.Group();
+  // Forward-facing triangular casting lip. Its centreline stays almost level,
+  // so the liquid leaves the furnace as a fall instead of following a bent pipe.
+  const spoutGeom = useMemo(() => {
+    const baseX = CAVITY_R_TOP - 0.04;
+    const shape = new THREE.Shape();
+    shape.moveTo(baseX, HEIGHT / 2 - 0.08);
+    shape.lineTo(baseX, HEIGHT / 2 - 0.42);
+    shape.lineTo(CAVITY_R_TOP + 0.92, HEIGHT / 2 - 0.26);
+    shape.closePath();
 
-    // 1. Spout channel trough base
-    const troughGeom = new THREE.CylinderGeometry(0.32, 0.18, 0.70, 16, 1, false, 0, Math.PI);
-    troughGeom.rotateZ(-Math.PI / 2);
-    troughGeom.rotateY(Math.PI / 2);
-    const trough = new THREE.Mesh(troughGeom, spoutMat);
-    trough.position.set(0.35, -0.06, 0);
-    trough.rotation.z = -0.32;
-    group.add(trough);
-
-    // 2. Left and right guide flanges
-    const flangeGeom = new THREE.BoxGeometry(0.65, 0.18, 0.05);
-    const leftFlange = new THREE.Mesh(flangeGeom, spoutMat);
-    leftFlange.position.set(0.34, 0.05, 0.16);
-    leftFlange.rotation.z = -0.32;
-    group.add(leftFlange);
-
-    const rightFlange = new THREE.Mesh(flangeGeom, spoutMat);
-    rightFlange.position.set(0.34, 0.05, -0.16);
-    rightFlange.rotation.z = -0.32;
-    group.add(rightFlange);
-
-    // 3. Smooth rounded pouring lip tip
-    const lipGeom = new THREE.CylinderGeometry(0.04, 0.04, 0.32, 12);
-    lipGeom.rotateX(Math.PI / 2);
-    const lip = new THREE.Mesh(lipGeom, spoutMat);
-    lip.position.set(0.64, -0.22, 0);
-    group.add(lip);
-
-    return group;
-  }, [spoutMat]);
+    const geometry = new THREE.ExtrudeGeometry(shape, {
+      depth: 0.44,
+      bevelEnabled: true,
+      bevelThickness: 0.025,
+      bevelSize: 0.025,
+      bevelSegments: 2,
+    });
+    geometry.translate(0, 0, -0.22);
+    return geometry;
+  }, []);
 
   // ── Scroll Animation Loop ───────────────────────────────────
   useFrame(({ clock }) => {
@@ -150,7 +193,7 @@ export default function Furnace({ debugFlow = false }: { debugFlow?: boolean }) 
     // Stage 03-04 (0.15 -> 0.20): Enters to stationary position X = 0.70
     // Stage 04-07 (0.20 -> 0.485): Stays at X = 0.70
     // Post-Pour (0.485 -> 0.505): Un-tilts to vertical
-    // Exit (0.505 -> 0.535): Slides back out of scene to X = 25 BEFORE ladle/mold move
+    // Exit (0.505 -> 0.535): Retreats left, away from the receiving ladle.
     let posX = 25;
     if (p < 0.15) {
       posX = 25;
@@ -159,11 +202,12 @@ export default function Furnace({ debugFlow = false }: { debugFlow?: boolean }) 
     } else if (p < 0.485) {
       posX = 0.70;
     } else if (p <= 0.535) {
-      // Smooth retreat to the right, clearing the bay completely
+      // The ladle occupies the right side of the bay, so the furnace leaves
+      // through its own (left) service lane instead of cutting through it.
       const exitT = (p - 0.485) / (0.535 - 0.485);
-      posX = lerp(0.70, 25, easeInOut(exitT));
+      posX = lerp(0.70, -25, easeInOut(exitT));
     } else {
-      posX = 25;
+      posX = -25;
     }
 
     // 2. Furnace Tilt
@@ -184,9 +228,45 @@ export default function Furnace({ debugFlow = false }: { debugFlow?: boolean }) 
       tiltAngle = 0;
     }
 
+    const isActive = p >= 0.27 && p <= 0.485;
+    const vibration = isActive ? Math.sin(clock.getElapsedTime() * 7.0) * 0.009 : 0;
+    const activeTilt = tiltAngle + vibration;
+
+    if (machineRef.current) {
+      machineRef.current.position.set(posX, 2.2, 0);
+    }
+
     if (pivotRef.current) {
-      pivotRef.current.position.set(posX, 2.2, 0);
-      pivotRef.current.rotation.z = tiltAngle;
+      // Barely perceptible furnace vibration makes the heating stage feel alive
+      // without affecting the scroll-controlled choreography.
+      pivotRef.current.position.y = vibration * 0.35;
+      pivotRef.current.rotation.z = activeTilt;
+    }
+
+    // Hydraulic actuators bridge the stationary platform and the rotating
+    // shell. The dark barrel extends most of the run while the chrome rod
+    // reaches the shell's moving attachment ear.
+    for (let index = 0; index < pistonKinematics.anchors.length; index++) {
+      const anchor = pistonKinematics.anchors[index];
+      pistonKinematics.attachment
+        .copy(pistonKinematics.attachmentLocal[index])
+        .applyAxisAngle(TILT_AXIS, activeTilt);
+      pistonKinematics.barrelEnd.lerpVectors(anchor, pistonKinematics.attachment, 0.64);
+
+      alignCylinder(
+        pistonBarrelRefs.current[index],
+        anchor,
+        pistonKinematics.barrelEnd,
+        pistonKinematics.direction,
+        pistonKinematics.midpoint
+      );
+      alignCylinder(
+        pistonRodRefs.current[index],
+        pistonKinematics.barrelEnd,
+        pistonKinematics.attachment,
+        pistonKinematics.direction,
+        pistonKinematics.midpoint
+      );
     }
 
     // 3. Metal Filling Level (Linear with scroll, zero lag)
@@ -246,7 +326,8 @@ export default function Furnace({ debugFlow = false }: { debugFlow?: boolean }) 
   });
 
   return (
-    <group ref={pivotRef}>
+    <group ref={machineRef}>
+      <group ref={pivotRef}>
       <group position={[-SHELL_R_TOP - 0.20, -HEIGHT / 2 + 0.15, 0]}>
 
         {/* ═══ 1. OUTER STEEL SHELL (Open-ended cylinder, hollow) ═══ */}
@@ -312,15 +393,35 @@ export default function Furnace({ debugFlow = false }: { debugFlow?: boolean }) 
           </mesh>
         ))}
 
-        {/* ═══ 8. ORGANIC SCULPTED POURING SPOUT ═══ */}
-        <group position={[CAVITY_R_TOP + 0.04, HEIGHT / 2 - 0.06, 0]}>
-          <primitive object={spoutMeshGroup} />
-
-          <mesh ref={spoutMarkerRef} position={[0.66, -0.22, 0]} visible={debugFlow}>
-            <sphereGeometry args={[0.05]} />
-            <meshBasicMaterial color="yellow" />
-          </mesh>
-        </group>
+        {/* ═══ 8. MOVING TRUNNIONS, ACTUATOR EARS & POURING LIP ═══ */}
+        <mesh position={[0, -0.15, 1.48]} rotation={[Math.PI / 2, 0, 0]} material={frameMat}>
+          <cylinderGeometry args={[0.14, 0.14, 0.28, 16]} />
+        </mesh>
+        <mesh position={[0, -0.15, -1.48]} rotation={[Math.PI / 2, 0, 0]} material={frameMat}>
+          <cylinderGeometry args={[0.14, 0.14, 0.28, 16]} />
+        </mesh>
+        {[-1, 1].map((side) => (
+          <group key={side} position={[0.97, -0.28, side * 1.40]}>
+            <mesh rotation={[Math.PI / 2, 0, 0]} material={pistonMat}>
+              <cylinderGeometry args={[0.15, 0.15, 0.20, 14]} />
+            </mesh>
+            <mesh position={[0, 0, side * 0.13]} material={rodMat}>
+              <sphereGeometry args={[0.16, 14, 14]} />
+            </mesh>
+          </group>
+        ))}
+        <mesh geometry={spoutGeom} material={spoutMat} />
+        <mesh position={[CAVITY_R_TOP + 0.92, HEIGHT / 2 - 0.26, 0]} material={rimMat}>
+          <boxGeometry args={[0.09, 0.15, 0.48]} />
+        </mesh>
+        <mesh
+          ref={spoutMarkerRef}
+          position={[CAVITY_R_TOP + 0.92, HEIGHT / 2 - 0.26, 0]}
+          visible={debugFlow}
+        >
+          <sphereGeometry args={[0.05]} />
+          <meshBasicMaterial color="yellow" />
+        </mesh>
 
         {/* ═══ 9. SCROLL-DRIVEN LIQUID METAL MESH ═══ */}
         <mesh
@@ -340,7 +441,62 @@ export default function Furnace({ debugFlow = false }: { debugFlow?: boolean }) 
           decay={2}
           intensity={0}
         />
+        </group>
       </group>
+
+      {/* ═══ FLOOR-MOUNTED TILTING STATION (does not rotate) ═══ */}
+      <group position={[-SHELL_R_TOP - 0.20, -HEIGHT / 2 + 0.15, 0]}>
+        {/* Double steel plinth bolted into the foundry floor */}
+        <mesh position={[0, -1.70, 0]} material={frameMat}>
+          <boxGeometry args={[3.10, 0.24, 3.75]} />
+        </mesh>
+        <mesh position={[0, -1.54, 0]} material={pistonMat}>
+          <boxGeometry args={[2.90, 0.16, 3.20]} />
+        </mesh>
+
+        {/* Two rigid A-frame pedestals retain the furnace at its trunnions */}
+        {[-1, 1].map((side) => (
+          <group key={side} position={[-0.55, -0.72, side * 1.55]}>
+            <mesh position={[0, 0.34, 0]} material={frameMat}>
+              <boxGeometry args={[0.28, 1.36, 0.26]} />
+            </mesh>
+            <mesh position={[-0.34, -0.26, 0]} rotation={[0, 0, -0.24 * side]} material={frameMat}>
+              <boxGeometry args={[0.20, 0.92, 0.28]} />
+            </mesh>
+            <mesh position={[0.10, 0.92, 0]} rotation={[Math.PI / 2, 0, 0]} material={pistonMat}>
+              <cylinderGeometry args={[0.23, 0.23, 0.30, 16]} />
+            </mesh>
+          </group>
+        ))}
+
+        {/* Anchor clevises for the hydraulic cylinders */}
+        {[-1, 1].map((side) => (
+          <group key={`anchor-${side}`} position={[-0.57, -1.20, side * 1.56]}>
+            <mesh material={pistonMat}>
+              <boxGeometry args={[0.52, 0.32, 0.42]} />
+            </mesh>
+            <mesh rotation={[Math.PI / 2, 0, 0]} material={rodMat}>
+              <cylinderGeometry args={[0.12, 0.12, 0.56, 14]} />
+            </mesh>
+          </group>
+        ))}
+      </group>
+
+      {/* Two live hydraulic pistons: fixed barrel + telescoping chrome rod */}
+      {[-1, 1].map((side, index) => (
+        <group key={`piston-${side}`}>
+          <group ref={(element) => { pistonBarrelRefs.current[index] = element; }}>
+            <mesh material={pistonMat}>
+              <cylinderGeometry args={[0.18, 0.20, 1, 16]} />
+            </mesh>
+          </group>
+          <group ref={(element) => { pistonRodRefs.current[index] = element; }}>
+            <mesh material={rodMat}>
+              <cylinderGeometry args={[0.075, 0.075, 1, 14]} />
+            </mesh>
+          </group>
+        </group>
+      ))}
     </group>
   );
 }

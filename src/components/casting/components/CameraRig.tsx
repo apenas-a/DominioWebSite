@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { castingState, lerp, smoothstep } from '@/components/casting/CastingTimeline';
@@ -24,10 +24,15 @@ const KEYFRAMES = [
 ];
 
 export default function CameraRig() {
-  const { camera } = useThree();
+  const { camera, size } = useThree();
   const currentTarget = useRef(new THREE.Vector3());
-  
-  const isMobile = useMemo(() => window.innerWidth < 768, []);
+  const isMobile = size.width < 768;
+
+  useEffect(() => {
+    const perspectiveCamera = camera as THREE.PerspectiveCamera;
+    perspectiveCamera.fov = isMobile ? 58 : 45;
+    perspectiveCamera.updateProjectionMatrix();
+  }, [camera, isMobile]);
 
   useFrame(() => {
     const p = castingState.progress;
@@ -51,14 +56,18 @@ export default function CameraRig() {
     let y = lerp(kf1.pos[1], kf2.pos[1], t);
     let z = lerp(kf1.pos[2], kf2.pos[2], t);
     
-    let tx = lerp(kf1.target[0], kf2.target[0], t);
+    const tx = lerp(kf1.target[0], kf2.target[0], t);
     let ty = lerp(kf1.target[1], kf2.target[1], t);
-    let tz = lerp(kf1.target[2], kf2.target[2], t);
+    const tz = lerp(kf1.target[2], kf2.target[2], t);
     
     if (isMobile) {
-      x *= 0.85;
-      y = y * 0.85 + 1;
-      z *= 0.85;
+      // A portrait viewport needs a wider, more distant technical view. The
+      // former 0.85 multiplier brought the camera closer and cropped the
+      // furnace precisely when the receiving ladle entered the sequence.
+      x *= 1.12;
+      y = y * 1.05 + 0.35;
+      z *= 1.33;
+      ty += 0.15;
     }
     
     camera.position.set(x, y, z);
